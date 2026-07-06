@@ -15,14 +15,16 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
 ## Fitur
 
 - **Daftar Sub-SLS** — 2.601 Sub-SLS Kab. Buleleng, filter cascading
-  (Provinsi → Kabupaten → Kecamatan → Desa) + filter PPL/PML/Status, pencarian bebas,
+  (Kecamatan → Desa) + filter PPL/PML/Status, pencarian bebas,
   kartu rekap mengikuti filter, expand baris untuk rincian, paginasi.
   Filter PML terakhir diingat per perangkat (localStorage).
+  (Provinsi/Kabupaten tidak ditampilkan karena aplikasi dipakai satu kabupaten.)
 - **Form Input** — 3 isian Usaha + 3 isian Keluarga (Pindah / Keluar / Tidak ada informasi),
   catatan opsional, validasi bilangan bulat ≥ 0, mode edit bila sudah pernah diisi.
 - **Dashboard Rekap** — kartu KPI, donut chart breakdown alasan (Chart.js),
   rekap per kecamatan, tabel progres per PML (bisa diurutkan & dicari), tombol muat ulang.
-- Mobile-friendly (tabel berubah jadi kartu di layar sempit), Bahasa Indonesia.
+- Mobile-friendly: tabel bisa di-scroll ke samping dengan kolom Sub-SLS beku (sticky)
+  dan font mengecil di layar sempit. Bahasa Indonesia.
 
 ## Struktur data
 
