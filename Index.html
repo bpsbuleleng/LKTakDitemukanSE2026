@@ -80,16 +80,33 @@ thead th{
   font-size:12px; color:var(--mut); text-transform:uppercase; letter-spacing:.03em;
   background:#f8fafc; position:sticky; top:0; z-index:2;
 }
-/* Tabel utama: font kecil + kolom pertama beku saat scroll samping */
-#tbl{font-size:13px}
+/* Tabel utama: font kecil + 2 kolom pertama beku saat scroll samping */
+#tbl{font-size:13px; min-width:860px}
 #tbl th, #tbl td{padding:7px 8px}
+#tbl th:nth-child(2), #tbl td:nth-child(2){width:62px; min-width:62px}
+#tbl th:nth-child(3), #tbl td:nth-child(3),
+#tbl th:nth-child(4), #tbl td:nth-child(4){min-width:110px}
+#tbl th:nth-child(5), #tbl td:nth-child(5){min-width:90px}
+#tbl th:nth-child(6), #tbl td:nth-child(6),
+#tbl th:nth-child(7), #tbl td:nth-child(7){min-width:65px}
+#tbl th:nth-child(8), #tbl td:nth-child(8),
+#tbl th:nth-child(9), #tbl td:nth-child(9){min-width:120px}
 #tbl thead th:first-child{position:sticky; left:0; z-index:3; background:#f8fafc}
 #tbl tbody tr.data-row td:first-child{
   position:sticky; left:0; z-index:1; background:var(--card);
-  min-width:160px; max-width:220px;
+  width:160px; min-width:160px; max-width:160px;
+}
+#tbl thead th:nth-child(2){
+  position:sticky; left:160px; z-index:3; background:#f8fafc;
   box-shadow:2px 0 4px -2px rgba(15,23,42,.18);
 }
-#tbl tbody tr.data-row:hover td:first-child{background:#f8fafc}
+#tbl tbody tr.data-row td:nth-child(2){
+  position:sticky; left:160px; z-index:1; background:var(--card);
+  white-space:nowrap;
+  box-shadow:2px 0 4px -2px rgba(15,23,42,.18);
+}
+#tbl tbody tr.data-row:hover td:first-child,
+#tbl tbody tr.data-row:hover td:nth-child(2){background:#f8fafc}
 tbody tr.data-row{cursor:pointer}
 tbody tr.data-row:hover{background:#f8fafc}
 td.num{text-align:right; font-variant-numeric:tabular-nums}
@@ -152,14 +169,10 @@ legend{font-weight:800; padding:0 6px}
 .chart-total{font-size:12px; color:var(--mut); margin-top:6px}
 .dash-tables{display:grid; grid-template-columns:1fr; gap:14px}
 .dash-tables h3{font-size:15px; margin:0 0 8px}
-/* Panel tinggi tetap, scroll vertikal + horizontal */
-.dash-tables .table-wrap{max-height:340px; overflow-y:auto; overflow-x:auto}
 .dash-tables .table-wrap table{min-width:700px; font-size:13px}
-/* Header beku di atas (bekerja dalam scroll-container bertinggi tetap) */
 .dash-tables .table-wrap thead th{position:sticky; top:0; z-index:2; background:#f8fafc}
-/* Kolom pertama beku di kiri (scroll horizontal) */
 .dash-tables .table-wrap thead th:first-child{
-  position:sticky; left:0; z-index:4; background:#f8fafc;
+  position:sticky; left:0; z-index:3; background:#f8fafc;
   box-shadow:2px 0 4px -2px rgba(15,23,42,.15);
 }
 .dash-tables .table-wrap tbody td:first-child{
@@ -197,8 +210,17 @@ th.sortable:hover{color:var(--pri)}
 /* ===== Mobile: font lebih kecil, tabel tetap scroll samping ===== */
 @media (max-width:760px){
   .brand h1{font-size:14px}
-  #tbl{font-size:12px}
-  #tbl tbody tr.data-row td:first-child{min-width:130px; max-width:170px}
+  #tbl{font-size:12px; min-width:720px}
+  #tbl tbody tr.data-row td:first-child{width:130px; min-width:130px; max-width:130px}
+  #tbl thead th:nth-child(2),
+  #tbl tbody tr.data-row td:nth-child(2){left:130px}
+  #tbl th:nth-child(3), #tbl td:nth-child(3),
+  #tbl th:nth-child(4), #tbl td:nth-child(4){min-width:90px}
+  #tbl th:nth-child(5), #tbl td:nth-child(5){min-width:80px}
+  #tbl th:nth-child(6), #tbl td:nth-child(6),
+  #tbl th:nth-child(7), #tbl td:nth-child(7){min-width:55px}
+  #tbl th:nth-child(8), #tbl td:nth-child(8),
+  #tbl th:nth-child(9), #tbl td:nth-child(9){min-width:100px}
 }
 </style>
 </head>
@@ -245,9 +267,9 @@ th.sortable:hover{color:var(--pri)}
     <div class="table-wrap">
       <table id="tbl">
         <thead><tr>
-          <th>Sub-SLS</th><th>Desa</th><th>Kecamatan</th>
+          <th>Sub-SLS</th><th>Aksi</th>
           <th>PPL</th><th>PML</th><th>Status</th>
-          <th class="num">Usaha</th><th class="num">Keluarga</th><th>Aksi</th>
+          <th class="num">Usaha</th><th class="num">Keluarga</th><th>Desa</th><th>Kecamatan</th>
         </tr></thead>
         <tbody id="tbl-body"></tbody>
       </table>
@@ -609,14 +631,14 @@ function renderList(){
     html += '<tr class="data-row" onclick="toggleDetail(\'' + m.id + '\')">' +
       '<td data-label="Sub-SLS"><div><span class="chev">' + (expanded ? '&#9662;' : '&#9656;') + '</span>' +
         '<span class="sls-name">' + esc(m.sls) + '</span><div class="sls-code">SLS ' + esc(m.kdsls) + ' &middot; Sub ' + esc(m.kdsubsls) + '</div></div></td>' +
-      '<td data-label="Desa">' + esc(m.desa) + '</td>' +
-      '<td data-label="Kecamatan">' + esc(m.kec) + '</td>' +
+      '<td data-label="Aksi"><button class="mini-btn" onclick="event.stopPropagation();openForm(\'' + m.id + '\')">' + (l ? 'Ubah' : 'Isi') + '</button></td>' +
       '<td data-label="PPL">' + esc(m.ppl) + '</td>' +
       '<td data-label="PML">' + esc(m.pml) + '</td>' +
       '<td data-label="Status">' + (l ? '<span class="badge ok">&#10003; Sudah diisi</span>' : '<span class="badge belum">Belum diisi</span>') + '</td>' +
       '<td data-label="Usaha" class="num">' + (l ? fmt(totU(l)) : '&ndash;') + '</td>' +
       '<td data-label="Keluarga" class="num">' + (l ? fmt(totK(l)) : '&ndash;') + '</td>' +
-      '<td data-label="Aksi"><button class="mini-btn" onclick="event.stopPropagation();openForm(\'' + m.id + '\')">' + (l ? 'Ubah' : 'Isi') + '</button></td>' +
+      '<td data-label="Desa">' + esc(m.desa) + '</td>' +
+      '<td data-label="Kecamatan">' + esc(m.kec) + '</td>' +
       '</tr>';
     if (expanded) html += detailRow(m, l);
   });
