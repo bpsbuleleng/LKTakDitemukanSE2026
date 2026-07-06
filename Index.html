@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pelaporan Assignment Tidak Ditemukan — SE2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --pri:#0b57d0; --pri-dark:#0842a0; --pri-soft:#e8f0fe;
+  --bg:#f1f5f9; --card:#ffffff; --ink:#0f172a; --mut:#64748b; --line:#e2e8f0;
+  --ok:#15803d; --ok-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7;
+  --err:#b91c1c; --err-bg:#fee2e2; --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:15px; line-height:1.45;
+}
+button{font:inherit; cursor:pointer}
+input,select,textarea{font:inherit; color:var(--ink)}
+h1,h2,h3{margin:0}
+
+/* ===== Topbar ===== */
+.topbar{
+  background:var(--card); border-bottom:1px solid var(--line);
+  padding:10px 16px; display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:20;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand .logo{
+  width:38px; height:38px; border-radius:10px; background:var(--pri); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:19px; flex:none;
+}
+.brand h1{font-size:16px; line-height:1.2}
+.brand small{color:var(--mut); font-size:12px}
+nav{display:flex; gap:6px}
+.nav-btn{
+  border:1px solid var(--line); background:var(--card); border-radius:999px;
+  padding:7px 16px; font-weight:600; color:var(--mut);
+}
+.nav-btn.active{background:var(--pri); border-color:var(--pri); color:#fff}
+
+main{max-width:1220px; margin:0 auto; padding:16px}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px}
+.muted{color:var(--mut)}
+
+/* ===== Filter ===== */
+.filters{margin-bottom:14px}
+.filter-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px}
+.filter-grid label{display:flex; flex-direction:column; gap:3px; font-size:12px; font-weight:600; color:var(--mut)}
+.filter-grid select, .searchrow input{
+  border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; width:100%;
+}
+.searchrow{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+.searchrow input{flex:1; min-width:220px}
+.btn{
+  border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px; font-weight:600;
+}
+.btn:hover{background:var(--bg)}
+.btn-pri{background:var(--pri); border-color:var(--pri); color:#fff}
+.btn-pri:hover{background:var(--pri-dark)}
+.btn-pri:disabled{opacity:.6; cursor:not-allowed}
+
+/* ===== Kartu ringkasan ===== */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-bottom:14px}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:10px 14px}
+.stat .v{font-size:22px; font-weight:800; line-height:1.2}
+.stat .l{font-size:12px; color:var(--mut); font-weight:600}
+.stat .s{font-size:12px; color:var(--mut)}
+.stat.ok .v{color:var(--ok)} .stat.warn .v{color:var(--warn)} .stat.pri .v{color:var(--pri)}
+
+/* ===== Tabel ===== */
+.table-wrap{overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:var(--r)}
+table{border-collapse:collapse; width:100%; min-width:760px}
+th,td{padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+thead th{
+  font-size:12px; color:var(--mut); text-transform:uppercase; letter-spacing:.03em;
+  background:#f8fafc; position:sticky; top:0;
+}
+tbody tr.data-row{cursor:pointer}
+tbody tr.data-row:hover{background:#f8fafc}
+td.num{text-align:right; font-variant-numeric:tabular-nums}
+th.num{text-align:right}
+.sls-name{font-weight:600}
+.sls-code{font-size:12px; color:var(--mut)}
+.chev{display:inline-block; width:14px; color:var(--mut); font-size:11px}
+.badge{display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap}
+.badge.ok{background:var(--ok-bg); color:var(--ok)}
+.badge.belum{background:var(--warn-bg); color:var(--warn)}
+.mini-btn{border:1px solid var(--pri); color:var(--pri); background:#fff; border-radius:8px; padding:5px 12px; font-weight:600; white-space:nowrap}
+.mini-btn:hover{background:var(--pri-soft)}
+tr.detail-row td{background:#f8fafc; padding:12px 16px}
+.detail-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px}
+.detail-box h4{margin:0 0 6px; font-size:13px}
+.detail-box table{min-width:0}
+.detail-box td{padding:3px 6px; border:none; font-size:13px}
+.empty-row td{text-align:center; padding:30px; color:var(--mut)}
+
+/* ===== Paginasi ===== */
+.pager{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px}
+.pager .pbtns{display:flex; gap:4px}
+.pager button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 11px}
+.pager button:disabled{opacity:.4; cursor:default}
+.pager select{border:1px solid var(--line); border-radius:8px; padding:5px 8px}
+
+/* ===== Form ===== */
+.back-link{display:inline-block; margin-bottom:12px; color:var(--pri); font-weight:600; text-decoration:none; background:none; border:none; padding:0}
+.info-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px}
+.info-grid .fi .l{font-size:11px; color:var(--mut); font-weight:700; text-transform:uppercase; letter-spacing:.03em}
+.info-grid .fi .v{font-weight:600}
+fieldset{
+  border:1px solid var(--line); border-radius:var(--r); background:var(--card);
+  padding:12px 16px 16px; margin:14px 0 0; min-width:0;
+}
+legend{font-weight:800; padding:0 6px}
+.fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px}
+.num-field span{display:block; font-size:13px; font-weight:600; margin-bottom:4px}
+.num-field input{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 10px; font-size:16px;
+}
+.num-field input:focus{outline:2px solid var(--pri); border-color:var(--pri)}
+.num-field.invalid input{border-color:var(--err); background:var(--err-bg)}
+.num-field .fe{display:none; color:var(--err); font-size:12px; font-style:normal}
+.num-field.invalid .fe{display:block}
+.subtotal{margin-top:10px; font-size:13px; color:var(--mut)}
+.subtotal b{color:var(--ink)}
+.catatan-wrap{margin-top:14px}
+.catatan-wrap textarea{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 10px; min-height:70px; resize:vertical;
+}
+.form-actions{margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.form-err{color:var(--err); font-weight:600; margin-top:10px}
+
+/* ===== Dashboard ===== */
+.dash-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.charts{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; margin:14px 0}
+.chart-card h3{font-size:14px; margin-bottom:8px}
+.chart-box{position:relative; height:250px}
+.chart-total{font-size:12px; color:var(--mut); margin-top:6px}
+.dash-tables{display:grid; grid-template-columns:1fr; gap:14px}
+.dash-tables .table-wrap table{min-width:640px}
+.dash-tables h3{font-size:15px; margin:0 0 8px}
+.progress{background:var(--line); border-radius:999px; height:8px; min-width:70px; overflow:hidden}
+.progress i{display:block; height:100%; background:var(--ok); border-radius:999px}
+th.sortable{cursor:pointer; user-select:none}
+th.sortable:hover{color:var(--pri)}
+.pml-search{margin-bottom:8px}
+.pml-search input{border:1px solid var(--line); border-radius:8px; padding:7px 10px; width:100%; max-width:320px}
+
+/* ===== Toast & loading ===== */
+#toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:#fff; padding:11px 18px; border-radius:10px; font-weight:600;
+  opacity:0; pointer-events:none; transition:.25s; z-index:60; max-width:92vw; text-align:center;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--ok)} #toast.err{background:var(--err)}
+.loading-overlay{
+  position:fixed; inset:0; background:rgba(241,245,249,.88); z-index:50;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+}
+.loading-overlay[hidden]{display:none}
+.spinner{
+  width:38px; height:38px; border:4px solid var(--line); border-top-color:var(--pri);
+  border-radius:50%; animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== Mobile: tabel utama jadi kartu ===== */
+@media (max-width:760px){
+  .brand h1{font-size:14px}
+  #tbl{min-width:0}
+  #tbl thead{display:none}
+  #tbl tr{display:block; border:1px solid var(--line); border-radius:var(--r); margin:10px; background:#fff}
+  #tbl tr.detail-row{margin-top:-8px; border-top:none; border-radius:0 0 var(--r) var(--r)}
+  #tbl td{display:flex; justify-content:space-between; gap:10px; border:none; padding:5px 12px}
+  #tbl td:first-child{padding-top:10px}
+  #tbl td:last-child{padding-bottom:10px}
+  #tbl td.num{text-align:right}
+  #tbl td::before{content:attr(data-label); font-weight:700; color:var(--mut); font-size:12px; flex:none}
+  #tbl tr.detail-row td{display:block}
+  #tbl tr.detail-row td::before{content:none}
+  #tbl .empty-row td{display:block; text-align:center}
+  .table-wrap{background:transparent; border:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">&#128203;</span>
+    <div>
+      <h1>Pelaporan Assignment Tidak Ditemukan</h1>
+      <small>SE2026 &middot; Usaha &amp; Keluarga per Sub-SLS</small>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" id="nav-list" onclick="showView('list')">Daftar Sub-SLS</button>
+    <button class="nav-btn" id="nav-dash" onclick="showView('dash')">Dashboard</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ HALAMAN 1: DAFTAR SUB-SLS ============ -->
+  <section id="view-list">
+    <div class="card filters">
+      <div class="filter-grid">
+        <label>Kecamatan<select id="f-kec"></select></label>
+        <label>Desa/Kelurahan<select id="f-desa"></select></label>
+        <label>Nama PPL<select id="f-ppl"></select></label>
+        <label>Nama PML<select id="f-pml"></select></label>
+        <label>Status<select id="f-status">
+          <option value="">Semua</option>
+          <option value="sudah">Sudah diisi</option>
+          <option value="belum">Belum diisi</option>
+        </select></label>
+      </div>
+      <div class="searchrow">
+        <input id="f-q" type="search" placeholder="Cari Sub-SLS, desa, nama PPL, atau nama PML&hellip;">
+        <button class="btn" onclick="resetFilters()">Reset Filter</button>
+      </div>
+    </div>
+
+    <div class="stats" id="list-stats"></div>
+
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead><tr>
+          <th>Sub-SLS</th><th>Desa</th><th>Kecamatan</th>
+          <th>PPL</th><th>PML</th><th>Status</th>
+          <th class="num">Usaha</th><th class="num">Keluarga</th><th>Aksi</th>
+        </tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <span class="muted" id="pg-info"></span>
+      <div class="pbtns">
+        <button id="pg-first" onclick="gotoPage(1)">&laquo;</button>
+        <button id="pg-prev" onclick="gotoPage(state.page-1)">&lsaquo;</button>
+        <button id="pg-next" onclick="gotoPage(state.page+1)">&rsaquo;</button>
+        <button id="pg-last" onclick="gotoPage(999999)">&raquo;</button>
+      </div>
+      <label class="muted">Per halaman
+        <select id="pg-size">
+          <option>10</option><option selected>25</option><option>50</option><option>100</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <!-- ============ HALAMAN 2: FORM INPUT ============ -->
+  <section id="view-form" hidden>
+    <button class="back-link" onclick="showView('list')">&larr; Kembali ke Daftar Sub-SLS</button>
+
+    <div class="card">
+      <div class="info-grid" id="form-info"></div>
+    </div>
+
+    <form id="frm" novalidate>
+      <fieldset>
+        <legend>&#127970; Usaha tidak ditemukan</legend>
+        <div class="fields">
+          <label class="num-field"><span>Pindah Sub-SLS</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-u-pindah">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+          <label class="num-field"><span>Keluar Sub-SLS</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-u-keluar">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+          <label class="num-field"><span>Sama sekali tidak ada informasi</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-u-noinfo">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+        </div>
+        <div class="subtotal">Total Usaha tidak ditemukan: <b id="sub-u">0</b></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>&#127968; Keluarga tidak ditemukan</legend>
+        <div class="fields">
+          <label class="num-field"><span>Pindah Sub-SLS</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-k-pindah">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+          <label class="num-field"><span>Keluar Sub-SLS</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-k-keluar">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+          <label class="num-field"><span>Sama sekali tidak ada informasi</span>
+            <input type="number" min="0" step="1" inputmode="numeric" id="in-k-noinfo">
+            <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
+        </div>
+        <div class="subtotal">Total Keluarga tidak ditemukan: <b id="sub-k">0</b></div>
+      </fieldset>
+
+      <div class="catatan-wrap">
+        <label><span style="font-size:13px;font-weight:600">Catatan (opsional, maks. 500 karakter)</span>
+          <textarea id="in-catatan" maxlength="500" placeholder="Penjelasan tambahan bila diperlukan&hellip;"></textarea>
+        </label>
+      </div>
+
+      <div class="form-err" id="form-err" hidden></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-pri" id="btn-save">&#128190; Simpan</button>
+        <button type="button" class="btn" onclick="showView('list')">Batal</button>
+        <span class="muted" id="form-updated"></span>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ HALAMAN 3: DASHBOARD ============ -->
+  <section id="view-dash" hidden>
+    <div class="dash-head">
+      <div>
+        <h2 style="font-size:18px">Dashboard Rekap</h2>
+        <small class="muted" id="dash-loaded"></small>
+      </div>
+      <button class="btn btn-pri" id="btn-refresh" onclick="refreshData()">&#10227; Muat Ulang Data</button>
+    </div>
+
+    <div class="stats" id="dash-kpi"></div>
+
+    <div class="charts">
+      <div class="card chart-card">
+        <h3>Breakdown Alasan &mdash; Usaha</h3>
+        <div class="chart-box"><canvas id="ch-usaha"></canvas></div>
+        <div class="chart-total" id="ch-usaha-t"></div>
+      </div>
+      <div class="card chart-card">
+        <h3>Breakdown Alasan &mdash; Keluarga</h3>
+        <div class="chart-box"><canvas id="ch-keluarga"></canvas></div>
+        <div class="chart-total" id="ch-keluarga-t"></div>
+      </div>
+    </div>
+
+    <div class="dash-tables">
+      <div>
+        <h3>Rekap per Kecamatan <small class="muted">(urut total tidak ditemukan terbanyak)</small></h3>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>Kecamatan</th><th class="num">Sub-SLS</th><th class="num">Sudah Lapor</th>
+            <th>Progres</th><th class="num">Usaha</th><th class="num">Keluarga</th><th class="num">Total</th>
+          </tr></thead>
+          <tbody id="kec-body"></tbody>
+        </table></div>
+      </div>
+
+      <div>
+        <h3>Progres per PML <small class="muted">(klik judul kolom untuk mengurutkan)</small></h3>
+        <div class="pml-search"><input id="pml-q" type="search" placeholder="Cari nama PML&hellip;"></div>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th class="sortable" data-k="pml">Nama PML</th>
+            <th class="sortable num" data-k="total">Ditugaskan</th>
+            <th class="sortable num" data-k="done">Dilaporkan</th>
+            <th class="sortable" data-k="pct">Progres</th>
+            <th class="sortable num" data-k="usaha">Usaha</th>
+            <th class="sortable num" data-k="keluarga">Keluarga</th>
+          </tr></thead>
+          <tbody id="pml-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Memuat data&hellip;</p>
+  <button class="btn btn-pri" id="loading-retry" hidden onclick="loadData()">Coba Lagi</button>
+</div>
+
+<script>
+/* Urutan kolom harus sinkron dengan MASTER_SEND / LAPORAN di Code.gs */
+var MASTER_COLS = ['id','prov','kab','kec','desa','kdsls','kdsubsls','sls','ppl','pml'];
+var LAP_COLS = ['id','u_pindah','u_keluar','u_noinfo','k_pindah','k_keluar','k_noinfo','catatan','updated'];
+
+var state = {
+  master: [],        // array objek Sub-SLS
+  laporan: {},       // id -> objek laporan
+  view: 'list',
+  filters: {kec:'',desa:'',ppl:'',pml:'',status:'',q:''},
+  page: 1, perPage: 25,
+  expandedId: null,
+  currentId: null,
+  loadedAt: null,
+  pmlSort: {key:'pml', dir:1},
+  charts: {}
+};
+
+/* ---------- util ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmt(n){ return Number(n||0).toLocaleString('id-ID'); }
+function pct(a,b){ return b ? Math.round(a/b*1000)/10 : 0; }
+function totU(l){ return l ? l.u_pindah + l.u_keluar + l.u_noinfo : 0; }
+function totK(l){ return l ? l.k_pindah + l.k_keluar + l.k_noinfo : 0; }
+function slsLabel(m){ return m.sls + ' [' + m.kdsls + '-' + m.kdsubsls + ']'; }
+function debounce(fn, ms){
+  var t; return function(){ var a=arguments; clearTimeout(t); t=setTimeout(function(){ fn.apply(null,a); }, ms); };
+}
+function toast(msg, type){
+  var el = $('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type||'');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.className=''; }, 3500);
+}
+function lsGet(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+/* ---------- komunikasi server ---------- */
+function serverCall(name, arg){
+  return new Promise(function(resolve, reject){
+    if (window.google && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function(err){
+          reject(new Error(err && err.message ? err.message : 'Terjadi kesalahan pada server.'));
+        })[name](arg);
+    } else {
+      MOCK[name](arg).then(resolve, reject); // pratinjau lokal di luar Apps Script
+    }
+  });
+}
+
+function loadData(){
+  $('loading').hidden = false;
+  $('loading-msg').textContent = 'Memuat data…';
+  $('loading-retry').hidden = true;
+  return serverCall('getAppData').then(function(data){
+    state.master = data.master.map(function(r){
+      var o = {}; MASTER_COLS.forEach(function(c,i){ o[c] = r[i]; }); return o;
+    });
+    state.master.sort(function(a,b){ return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+    state.laporan = {};
+    data.laporan.forEach(function(r){
+      var o = {}; LAP_COLS.forEach(function(c,i){ o[c] = r[i]; });
+      state.laporan[o.id] = o;
+    });
+    state.loadedAt = new Date();
+    $('loading').hidden = true;
+    renderFilters();
+    renderView();
+  }).catch(function(err){
+    $('loading-msg').textContent = 'Gagal memuat data: ' + err.message;
+    $('loading-retry').hidden = false;
+  });
+}
+
+function refreshData(){
+  var btn = $('btn-refresh');
+  btn.disabled = true;
+  loadData().then(function(){
+    btn.disabled = false;
+    toast('Data terbaru berhasil dimuat', 'ok');
+  });
+}
+
+/* ---------- navigasi ---------- */
+function showView(v){
+  state.view = v;
+  $('view-list').hidden = v !== 'list';
+  $('view-form').hidden = v !== 'form';
+  $('view-dash').hidden = v !== 'dash';
+  $('nav-list').classList.toggle('active', v === 'list' || v === 'form');
+  $('nav-dash').classList.toggle('active', v === 'dash');
+  window.scrollTo(0,0);
+  renderView();
+}
+function renderView(){
+  if (state.view === 'list') renderList();
+  else if (state.view === 'dash') renderDash();
+}
+
+/* ---------- filter ---------- */
+var GEO = ['kec','desa'];
+
+function matchGeoUpTo(m, level){
+  for (var i = 0; i < level; i++) {
+    var g = GEO[i];
+    if (state.filters[g] && m[g] !== state.filters[g]) return false;
+  }
+  return true;
+}
+
+function fillSelect(id, values, current, placeholder){
+  var el = $(id);
+  var opts = '<option value="">' + placeholder + '</option>';
+  values.forEach(function(v){
+    opts += '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v) + '</option>';
+  });
+  el.innerHTML = opts;
+}
+
+function renderFilters(){
+  GEO.forEach(function(g, level){
+    var vals = {};
+    state.master.forEach(function(m){ if (matchGeoUpTo(m, level)) vals[m[g]] = 1; });
+    var sorted = Object.keys(vals).sort();
+    if (state.filters[g] && sorted.indexOf(state.filters[g]) < 0) state.filters[g] = '';
+    fillSelect('f-' + g, sorted, state.filters[g], 'Semua');
+  });
+  ['ppl','pml'].forEach(function(f){
+    var vals = {};
+    state.master.forEach(function(m){ if (matchGeoUpTo(m, GEO.length)) vals[m[f]] = 1; });
+    var sorted = Object.keys(vals).sort();
+    if (state.filters[f] && sorted.indexOf(state.filters[f]) < 0) state.filters[f] = '';
+    fillSelect('f-' + f, sorted, state.filters[f], 'Semua');
+  });
+  $('f-status').value = state.filters.status;
+  $('f-q').value = state.filters.q;
+}
+
+function onFilterChange(field, value){
+  state.filters[field] = value;
+  var gi = GEO.indexOf(field);
+  if (gi >= 0) for (var i = gi + 1; i < GEO.length; i++) state.filters[GEO[i]] = '';
+  if (field === 'pml') lsSet('lk_pml', value);
+  state.page = 1;
+  state.expandedId = null;
+  renderFilters();
+  renderList();
+}
+
+function resetFilters(){
+  state.filters = {kec:'',desa:'',ppl:'',pml:'',status:'',q:''};
+  lsSet('lk_pml','');
+  state.page = 1;
+  state.expandedId = null;
+  renderFilters();
+  renderList();
+}
+
+function filteredRows(){
+  var f = state.filters, q = f.q.trim().toLowerCase();
+  return state.master.filter(function(m){
+    if (f.kec && m.kec !== f.kec) return false;
+    if (f.desa && m.desa !== f.desa) return false;
+    if (f.ppl && m.ppl !== f.ppl) return false;
+    if (f.pml && m.pml !== f.pml) return false;
+    if (f.status) {
+      var sudah = !!state.laporan[m.id];
+      if (f.status === 'sudah' && !sudah) return false;
+      if (f.status === 'belum' && sudah) return false;
+    }
+    if (q) {
+      var hay = (m.sls + ' ' + m.desa + ' ' + m.ppl + ' ' + m.pml + ' ' + m.id).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------- Halaman 1: daftar ---------- */
+function renderList(){
+  var rows = filteredRows();
+
+  // Ringkasan mengikuti filter aktif
+  var sudah = 0, tU = 0, tK = 0;
+  rows.forEach(function(m){
+    var l = state.laporan[m.id];
+    if (l) { sudah++; tU += totU(l); tK += totK(l); }
+  });
+  $('list-stats').innerHTML =
+    stat('Sub-SLS tampil', fmt(rows.length), '', 'pri') +
+    stat('Sudah diisi', fmt(sudah), pct(sudah, rows.length) + '%', 'ok') +
+    stat('Belum diisi', fmt(rows.length - sudah), pct(rows.length - sudah, rows.length) + '%', 'warn') +
+    stat('Usaha tidak ditemukan', fmt(tU), 'dari data tampil', '') +
+    stat('Keluarga tidak ditemukan', fmt(tK), 'dari data tampil', '');
+
+  // Paginasi
+  var totalPages = Math.max(1, Math.ceil(rows.length / state.perPage));
+  if (state.page > totalPages) state.page = totalPages;
+  var start = (state.page - 1) * state.perPage;
+  var pageRows = rows.slice(start, start + state.perPage);
+
+  var html = '';
+  if (!pageRows.length) {
+    html = '<tr class="empty-row"><td colspan="9">Tidak ada Sub-SLS yang cocok dengan filter/pencarian.</td></tr>';
+  }
+  pageRows.forEach(function(m){
+    var l = state.laporan[m.id];
+    var expanded = state.expandedId === m.id;
+    html += '<tr class="data-row" onclick="toggleDetail(\'' + m.id + '\')">' +
+      '<td data-label="Sub-SLS"><div><span class="chev">' + (expanded ? '&#9662;' : '&#9656;') + '</span>' +
+        '<span class="sls-name">' + esc(m.sls) + '</span><div class="sls-code">SLS ' + esc(m.kdsls) + ' &middot; Sub ' + esc(m.kdsubsls) + '</div></div></td>' +
+      '<td data-label="Desa">' + esc(m.desa) + '</td>' +
+      '<td data-label="Kecamatan">' + esc(m.kec) + '</td>' +
+      '<td data-label="PPL">' + esc(m.ppl) + '</td>' +
+      '<td data-label="PML">' + esc(m.pml) + '</td>' +
+      '<td data-label="Status">' + (l ? '<span class="badge ok">&#10003; Sudah diisi</span>' : '<span class="badge belum">Belum diisi</span>') + '</td>' +
+      '<td data-label="Usaha" class="num">' + (l ? fmt(totU(l)) : '&ndash;') + '</td>' +
+      '<td data-label="Keluarga" class="num">' + (l ? fmt(totK(l)) : '&ndash;') + '</td>' +
+      '<td data-label="Aksi"><button class="mini-btn" onclick="event.stopPropagation();openForm(\'' + m.id + '\')">' + (l ? 'Ubah' : 'Isi') + '</button></td>' +
+      '</tr>';
+    if (expanded) html += detailRow(m, l);
+  });
+  $('tbl-body').innerHTML = html;
+
+  $('pg-info').textContent = rows.length
+    ? 'Menampilkan ' + fmt(start + 1) + '–' + fmt(start + pageRows.length) + ' dari ' + fmt(rows.length) + ' Sub-SLS'
+    : '0 Sub-SLS';
+  $('pg-first').disabled = $('pg-prev').disabled = state.page <= 1;
+  $('pg-next').disabled = $('pg-last').disabled = state.page >= totalPages;
+}
+
+function stat(label, value, sub, cls){
+  return '<div class="stat ' + cls + '"><div class="l">' + label + '</div><div class="v">' + value + '</div>' +
+    (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>';
+}
+
+function detailRow(m, l){
+  var inner;
+  if (!l) {
+    inner = '<span class="muted">Belum ada laporan untuk Sub-SLS ini. Klik tombol "Isi" untuk mengisi.</span>';
+  } else {
+    inner = '<div class="detail-grid">' +
+      '<div class="detail-box"><h4>&#127970; Usaha &mdash; total ' + fmt(totU(l)) + '</h4><table>' +
+        '<tr><td>Pindah Sub-SLS</td><td class="num">' + fmt(l.u_pindah) + '</td></tr>' +
+        '<tr><td>Keluar Sub-SLS</td><td class="num">' + fmt(l.u_keluar) + '</td></tr>' +
+        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.u_noinfo) + '</td></tr></table></div>' +
+      '<div class="detail-box"><h4>&#127968; Keluarga &mdash; total ' + fmt(totK(l)) + '</h4><table>' +
+        '<tr><td>Pindah Sub-SLS</td><td class="num">' + fmt(l.k_pindah) + '</td></tr>' +
+        '<tr><td>Keluar Sub-SLS</td><td class="num">' + fmt(l.k_keluar) + '</td></tr>' +
+        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.k_noinfo) + '</td></tr></table></div>' +
+      '<div class="detail-box"><h4>Info</h4>' +
+        (l.catatan ? '<div style="font-size:13px"><b>Catatan:</b> ' + esc(l.catatan) + '</div>' : '') +
+        '<div class="muted" style="font-size:12px;margin-top:4px">Terakhir diperbarui: ' + esc(l.updated) + ' WITA</div>' +
+        '<div class="muted" style="font-size:12px">ID: ' + esc(m.id) + '</div></div>' +
+      '</div>';
+  }
+  return '<tr class="detail-row"><td colspan="9">' + inner + '</td></tr>';
+}
+
+function toggleDetail(id){
+  state.expandedId = state.expandedId === id ? null : id;
+  renderList();
+}
+
+function gotoPage(p){
+  var totalPages = Math.max(1, Math.ceil(filteredRows().length / state.perPage));
+  state.page = Math.min(Math.max(1, p), totalPages);
+  state.expandedId = null;
+  renderList();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Halaman 2: form ---------- */
+var FORM_INPUTS = [
+  {id:'in-u-pindah', key:'u_pindah', payload:'usaha_pindah_subsls'},
+  {id:'in-u-keluar', key:'u_keluar', payload:'usaha_keluar_subsls'},
+  {id:'in-u-noinfo', key:'u_noinfo', payload:'usaha_tidak_ada_informasi'},
+  {id:'in-k-pindah', key:'k_pindah', payload:'keluarga_pindah_subsls'},
+  {id:'in-k-keluar', key:'k_keluar', payload:'keluarga_keluar_subsls'},
+  {id:'in-k-noinfo', key:'k_noinfo', payload:'keluarga_tidak_ada_informasi'}
+];
+
+function openForm(id){
+  var m = state.master.find(function(x){ return x.id === id; });
+  if (!m) { toast('Sub-SLS tidak ditemukan', 'err'); return; }
+  state.currentId = id;
+  var l = state.laporan[id];
+
+  $('form-info').innerHTML =
+    fi('Sub-SLS', slsLabel(m)) + fi('ID Sub-SLS', m.id) +
+    fi('Desa/Kelurahan', m.desa) + fi('Kecamatan', m.kec) +
+    fi('Nama PPL', m.ppl) + fi('Nama PML', m.pml);
+
+  FORM_INPUTS.forEach(function(f){
+    var el = $(f.id);
+    el.value = l ? l[f.key] : 0;
+    el.parentElement.classList.remove('invalid');
+  });
+  $('in-catatan').value = l ? l.catatan : '';
+  $('form-err').hidden = true;
+  $('form-updated').textContent = l ? 'Terakhir diperbarui: ' + l.updated + ' WITA' : 'Belum pernah diisi';
+  updateSubtotals();
+  showView('form');
+}
+
+function fi(label, value){
+  return '<div class="fi"><div class="l">' + esc(label) + '</div><div class="v">' + esc(value) + '</div></div>';
+}
+
+function updateSubtotals(){
+  var s = function(ids){
+    return ids.reduce(function(acc, id){
+      var v = Number($(id).value);
+      return acc + (isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+    }, 0);
+  };
+  $('sub-u').textContent = fmt(s(['in-u-pindah','in-u-keluar','in-u-noinfo']));
+  $('sub-k').textContent = fmt(s(['in-k-pindah','in-k-keluar','in-k-noinfo']));
+}
+
+function submitForm(e){
+  e.preventDefault();
+  var payload = { id_subsls: state.currentId, catatan: $('in-catatan').value.trim() };
+  var valid = true;
+
+  FORM_INPUTS.forEach(function(f){
+    var el = $(f.id);
+    var raw = el.value.trim();
+    var v = Number(raw);
+    var ok = raw !== '' && isFinite(v) && v >= 0 && v === Math.floor(v);
+    el.parentElement.classList.toggle('invalid', !ok);
+    if (!ok) valid = false;
+    payload[f.payload] = v;
+  });
+
+  var errEl = $('form-err');
+  if (!valid) {
+    errEl.textContent = 'Periksa kembali isian bertanda merah: wajib diisi bilangan bulat ≥ 0 (isi 0 jika tidak ada).';
+    errEl.hidden = false;
+    return;
+  }
+  errEl.hidden = true;
+
+  var btn = $('btn-save');
+  btn.disabled = true;
+  btn.innerHTML = 'Menyimpan…';
+
+  serverCall('saveLaporan', payload).then(function(res){
+    var o = { id: res.id_subsls, catatan: payload.catatan, updated: res.terakhir_diperbarui };
+    FORM_INPUTS.forEach(function(f){ o[f.key] = payload[f.payload]; });
+    state.laporan[res.id_subsls] = o;
+    btn.disabled = false;
+    btn.innerHTML = '&#128190; Simpan';
+    toast('Laporan berhasil disimpan ✓', 'ok');
+    showView('list');
+  }).catch(function(err){
+    btn.disabled = false;
+    btn.innerHTML = '&#128190; Simpan';
+    errEl.textContent = 'Gagal menyimpan: ' + err.message;
+    errEl.hidden = false;
+    toast('Gagal menyimpan laporan', 'err');
+  });
+}
+
+/* ---------- Halaman 3: dashboard ---------- */
+function renderDash(){
+  var total = state.master.length, sudah = 0;
+  var u = [0,0,0], k = [0,0,0];
+  var byKec = {}, byPml = {};
+
+  state.master.forEach(function(m){
+    var l = state.laporan[m.id];
+    if (!byKec[m.kec]) byKec[m.kec] = {kec:m.kec, total:0, done:0, usaha:0, keluarga:0};
+    if (!byPml[m.pml]) byPml[m.pml] = {pml:m.pml, total:0, done:0, usaha:0, keluarga:0};
+    byKec[m.kec].total++; byPml[m.pml].total++;
+    if (l) {
+      sudah++;
+      u[0]+=l.u_pindah; u[1]+=l.u_keluar; u[2]+=l.u_noinfo;
+      k[0]+=l.k_pindah; k[1]+=l.k_keluar; k[2]+=l.k_noinfo;
+      byKec[m.kec].done++; byKec[m.kec].usaha += totU(l); byKec[m.kec].keluarga += totK(l);
+      byPml[m.pml].done++; byPml[m.pml].usaha += totU(l); byPml[m.pml].keluarga += totK(l);
+    }
+  });
+
+  var tU = u[0]+u[1]+u[2], tK = k[0]+k[1]+k[2];
+
+  $('dash-loaded').textContent = state.loadedAt
+    ? 'Data dimuat: ' + state.loadedAt.toLocaleString('id-ID') : '';
+
+  $('dash-kpi').innerHTML =
+    stat('Total Sub-SLS', fmt(total), '', 'pri') +
+    stat('Sudah lapor', fmt(sudah), pct(sudah,total) + '%', 'ok') +
+    stat('Belum lapor', fmt(total-sudah), pct(total-sudah,total) + '%', 'warn') +
+    stat('Usaha tidak ditemukan', fmt(tU), '', '') +
+    stat('Keluarga tidak ditemukan', fmt(tK), '', '') +
+    stat('Total tidak ditemukan', fmt(tU+tK), 'Usaha + Keluarga', 'pri');
+
+  drawDonut('ch-usaha', u, ['#0b57d0','#f59e0b','#dc2626']);
+  drawDonut('ch-keluarga', k, ['#0e7490','#f59e0b','#dc2626']);
+  $('ch-usaha-t').textContent = 'Total: ' + fmt(tU) + ' usaha';
+  $('ch-keluarga-t').textContent = 'Total: ' + fmt(tK) + ' keluarga';
+
+  // Rekap per kecamatan, urut total tidak ditemukan desc
+  var kecs = Object.keys(byKec).map(function(x){ return byKec[x]; });
+  kecs.sort(function(a,b){ return (b.usaha+b.keluarga) - (a.usaha+a.keluarga) || b.total - a.total; });
+  $('kec-body').innerHTML = kecs.map(function(r){
+    var p = pct(r.done, r.total);
+    return '<tr><td>' + esc(r.kec) + '</td>' +
+      '<td class="num">' + fmt(r.total) + '</td>' +
+      '<td class="num">' + fmt(r.done) + '</td>' +
+      '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + p + '%"></i></div><span style="font-size:12px">' + p + '%</span></div></td>' +
+      '<td class="num">' + fmt(r.usaha) + '</td>' +
+      '<td class="num">' + fmt(r.keluarga) + '</td>' +
+      '<td class="num"><b>' + fmt(r.usaha + r.keluarga) + '</b></td></tr>';
+  }).join('');
+
+  renderPmlTable(byPml);
+}
+
+var _byPmlCache = null;
+function renderPmlTable(byPml){
+  if (byPml) _byPmlCache = byPml;
+  if (!_byPmlCache) return;
+  var q = $('pml-q').value.trim().toLowerCase();
+  var rows = Object.keys(_byPmlCache).map(function(x){ return _byPmlCache[x]; });
+  rows.forEach(function(r){ r.pct = pct(r.done, r.total); });
+  if (q) rows = rows.filter(function(r){ return r.pml.toLowerCase().indexOf(q) >= 0; });
+
+  var s = state.pmlSort;
+  rows.sort(function(a,b){
+    var va = a[s.key], vb = b[s.key];
+    if (typeof va === 'string') return va.localeCompare(vb, 'id') * s.dir;
+    return (va - vb) * s.dir;
+  });
+
+  $('pml-body').innerHTML = rows.map(function(r){
+    return '<tr><td>' + esc(r.pml) + '</td>' +
+      '<td class="num">' + fmt(r.total) + '</td>' +
+      '<td class="num">' + fmt(r.done) + '</td>' +
+      '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + r.pct + '%"></i></div><span style="font-size:12px">' + r.pct + '%</span></div></td>' +
+      '<td class="num">' + fmt(r.usaha) + '</td>' +
+      '<td class="num">' + fmt(r.keluarga) + '</td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="6">Tidak ada PML yang cocok.</td></tr>';
+}
+
+function drawDonut(canvasId, data, colors){
+  var box = $(canvasId).parentElement;
+  if (typeof Chart === 'undefined') {
+    box.innerHTML = '<p class="muted">Grafik tidak dapat dimuat (butuh koneksi internet).<br>' +
+      'Pindah: ' + fmt(data[0]) + ' &middot; Keluar: ' + fmt(data[1]) + ' &middot; Tanpa info: ' + fmt(data[2]) + '</p>';
+    return;
+  }
+  if (state.charts[canvasId]) state.charts[canvasId].destroy();
+  state.charts[canvasId] = new Chart($(canvasId), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pindah Sub-SLS', 'Keluar Sub-SLS', 'Tidak ada informasi'],
+      datasets: [{ data: data, backgroundColor: colors, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      cutout: '58%'
+    }
+  });
+}
+
+/* ---------- data pratinjau lokal (di luar Apps Script) ---------- */
+var MOCK = (function(){
+  var kec = ['Gerokgak','Seririt','Banjar'];
+  var master = [], lap = [];
+  var n = 0;
+  kec.forEach(function(kc, ki){
+    for (var d = 1; d <= 2; d++) {
+      var desa = 'Desa ' + kc + ' ' + d;
+      for (var s = 1; s <= 4; s++) {
+        for (var sub = 1; sub <= 2; sub++) {
+          n++;
+          var id = '51080' + ki + '000' + d + '000' + s + '0' + sub;
+          master.push([id,'Bali','Buleleng',kc,desa,'000'+s,'0'+sub,'Banjar Contoh '+s,
+            'PPL ' + kc + ' ' + Math.ceil(s/2), 'PML ' + kc + ' ' + d]);
+          if (n % 3 === 0) lap.push([id, n%4, n%3, n%2, n%5, n%2, n%3, n%6===0?'Catatan contoh':'', '2026-07-0' + (n%5+1) + ' 10:1' + (n%10) + ':00']);
+        }
+      }
+    }
+  });
+  return {
+    getAppData: function(){
+      return new Promise(function(res){ setTimeout(function(){ res({master:master, laporan:lap, generatedAt:''}); }, 400); });
+    },
+    saveLaporan: function(p){
+      return new Promise(function(res){
+        setTimeout(function(){
+          var ts = new Date().toISOString().slice(0,19).replace('T',' ');
+          var row = [p.id_subsls, p.usaha_pindah_subsls, p.usaha_keluar_subsls, p.usaha_tidak_ada_informasi,
+            p.keluarga_pindah_subsls, p.keluarga_keluar_subsls, p.keluarga_tidak_ada_informasi, p.catatan, ts];
+          var i = lap.findIndex(function(r){ return r[0] === p.id_subsls; });
+          if (i >= 0) lap[i] = row; else lap.push(row);
+          res({ ok:true, id_subsls: p.id_subsls, terakhir_diperbarui: ts });
+        }, 400);
+      });
+    }
+  };
+})();
+
+/* ---------- init ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  ['kec','desa','ppl','pml','status'].forEach(function(f){
+    $('f-' + f).addEventListener('change', function(){ onFilterChange(f, this.value); });
+  });
+  $('f-q').addEventListener('input', debounce(function(){
+    state.filters.q = $('f-q').value;
+    state.page = 1;
+    state.expandedId = null;
+    renderList();
+  }, 250));
+  $('pg-size').addEventListener('change', function(){
+    state.perPage = Number(this.value);
+    state.page = 1;
+    renderList();
+  });
+  $('frm').addEventListener('submit', submitForm);
+  FORM_INPUTS.forEach(function(f){ $(f.id).addEventListener('input', updateSubtotals); });
+  $('pml-q').addEventListener('input', debounce(function(){ renderPmlTable(); }, 200));
+  document.querySelectorAll('th.sortable').forEach(function(th){
+    th.addEventListener('click', function(){
+      var k = th.getAttribute('data-k');
+      if (state.pmlSort.key === k) state.pmlSort.dir *= -1;
+      else state.pmlSort = {key:k, dir: k === 'pml' ? 1 : -1};
+      renderPmlTable();
+    });
+  });
+
+  // Ingat filter PML terakhir milik pengguna perangkat ini
+  var savedPml = lsGet('lk_pml');
+  if (savedPml) state.filters.pml = savedPml;
+
+  loadData();
+});
+</script>
+</body>
+</html>
