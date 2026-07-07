@@ -93,9 +93,9 @@ thead th{
 #tbl th:nth-child(9), #tbl td:nth-child(9){min-width:72px}                      /* Usaha, Sel.Usaha, Keluarga, Sel.Keluarga */
 #tbl th:nth-child(10), #tbl td:nth-child(10),
 #tbl th:nth-child(11), #tbl td:nth-child(11){min-width:120px}                   /* Desa, Kecamatan */
-#tbl td.sel{font-weight:700}
-#tbl td.sel-ok{color:var(--ok)}
-#tbl td.sel-diff{color:var(--warn)}
+td.sel{font-weight:700}
+td.sel-ok{color:var(--ok)}
+td.sel-diff{color:var(--warn)}
 #tbl thead th:first-child{position:sticky; left:0; z-index:3; background:#f8fafc}
 #tbl tbody tr.data-row td:first-child{
   position:sticky; left:0; z-index:1; background:var(--card);
@@ -184,7 +184,7 @@ legend{font-weight:800; padding:0 6px}
 .chart-total{font-size:12px; color:var(--mut); margin-top:6px}
 .dash-tables{display:grid; grid-template-columns:1fr; gap:14px}
 .dash-tables h3{font-size:15px; margin:0 0 8px}
-.dash-tables .table-wrap table{min-width:700px; font-size:13px}
+.dash-tables .table-wrap table{min-width:860px; font-size:13px}
 .dash-tables .table-wrap thead th{position:sticky; top:0; z-index:2; background:#f8fafc}
 .dash-tables .table-wrap thead th:first-child{
   position:sticky; left:0; z-index:3; background:#f8fafc;
@@ -402,7 +402,11 @@ th.sortable:hover{color:var(--pri)}
         <div class="table-wrap"><table>
           <thead><tr>
             <th>Kecamatan</th><th class="num">Sub-SLS</th><th class="num">Sudah Lapor</th>
-            <th>Progres</th><th class="num">Usaha</th><th class="num">Keluarga</th><th class="num">Total</th>
+            <th>Progres</th><th class="num">Usaha</th>
+            <th class="num" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Usaha</th>
+            <th class="num">Keluarga</th>
+            <th class="num" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Keluarga</th>
+            <th class="num">Total</th>
           </tr></thead>
           <tbody id="kec-body"></tbody>
         </table></div>
@@ -418,7 +422,9 @@ th.sortable:hover{color:var(--pri)}
             <th class="sortable num" data-k="done">Dilaporkan</th>
             <th class="sortable" data-k="pct">Progres</th>
             <th class="sortable num" data-k="usaha">Usaha</th>
+            <th class="sortable num" data-k="selU" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Usaha</th>
             <th class="sortable num" data-k="keluarga">Keluarga</th>
+            <th class="sortable num" data-k="selK" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Keluarga</th>
           </tr></thead>
           <tbody id="pml-body"></tbody>
         </table></div>
@@ -874,15 +880,18 @@ function renderDash(){
 
   state.master.forEach(function(m){
     var l = state.laporan[m.id];
-    if (!byKec[m.kec]) byKec[m.kec] = {kec:m.kec, total:0, done:0, usaha:0, keluarga:0};
-    if (!byPml[m.pml]) byPml[m.pml] = {pml:m.pml, total:0, done:0, usaha:0, keluarga:0};
+    if (!byKec[m.kec]) byKec[m.kec] = {kec:m.kec, total:0, done:0, usaha:0, keluarga:0, refU:0, refK:0};
+    if (!byPml[m.pml]) byPml[m.pml] = {pml:m.pml, total:0, done:0, usaha:0, keluarga:0, refU:0, refK:0};
     byKec[m.kec].total++; byPml[m.pml].total++;
     if (l) {
       sudah++;
       u[0]+=l.u_pindah; u[1]+=l.u_keluar; u[2]+=l.u_noinfo;
       k[0]+=l.k_pindah; k[1]+=l.k_keluar; k[2]+=l.k_noinfo;
+      var rf = state.ref[m.id] || {u:0, k:0};
       byKec[m.kec].done++; byKec[m.kec].usaha += totU(l); byKec[m.kec].keluarga += totK(l);
+      byKec[m.kec].refU += rf.u; byKec[m.kec].refK += rf.k;
       byPml[m.pml].done++; byPml[m.pml].usaha += totU(l); byPml[m.pml].keluarga += totK(l);
+      byPml[m.pml].refU += rf.u; byPml[m.pml].refK += rf.k;
     }
   });
 
@@ -914,7 +923,9 @@ function renderDash(){
       '<td class="num">' + fmt(r.done) + '</td>' +
       '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + p + '%"></i></div><span style="font-size:12px">' + p + '%</span></div></td>' +
       '<td class="num">' + fmt(r.usaha) + '</td>' +
+      selCell('Selisih Usaha', r.usaha, r.refU, r.done > 0) +
       '<td class="num">' + fmt(r.keluarga) + '</td>' +
+      selCell('Selisih Keluarga', r.keluarga, r.refK, r.done > 0) +
       '<td class="num"><b>' + fmt(r.usaha + r.keluarga) + '</b></td></tr>';
   }).join('');
 
@@ -927,7 +938,11 @@ function renderPmlTable(byPml){
   if (!_byPmlCache) return;
   var q = $('pml-q').value.trim().toLowerCase();
   var rows = Object.keys(_byPmlCache).map(function(x){ return _byPmlCache[x]; });
-  rows.forEach(function(r){ r.pct = pct(r.done, r.total); });
+  rows.forEach(function(r){
+    r.pct = pct(r.done, r.total);
+    r.selU = r.usaha - r.refU;
+    r.selK = r.keluarga - r.refK;
+  });
   if (q) rows = rows.filter(function(r){ return r.pml.toLowerCase().indexOf(q) >= 0; });
 
   var s = state.pmlSort;
@@ -943,8 +958,10 @@ function renderPmlTable(byPml){
       '<td class="num">' + fmt(r.done) + '</td>' +
       '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + r.pct + '%"></i></div><span style="font-size:12px">' + r.pct + '%</span></div></td>' +
       '<td class="num">' + fmt(r.usaha) + '</td>' +
-      '<td class="num">' + fmt(r.keluarga) + '</td></tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="6">Tidak ada PML yang cocok.</td></tr>';
+      selCell('Selisih Usaha', r.usaha, r.refU, r.done > 0) +
+      '<td class="num">' + fmt(r.keluarga) + '</td>' +
+      selCell('Selisih Keluarga', r.keluarga, r.refK, r.done > 0) + '</tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="8">Tidak ada PML yang cocok.</td></tr>';
 }
 
 function drawDonut(canvasId, data, colors){

@@ -19,6 +19,8 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   kartu rekap mengikuti filter, expand baris untuk rincian, paginasi.
   Filter PML terakhir diingat per perangkat (localStorage).
   (Provinsi/Kabupaten tidak ditampilkan karena aplikasi dipakai satu kabupaten.)
+  Kolom **Selisih Usaha** & **Selisih Keluarga** (laporan − hasil Monitoring SE2026):
+  hijau bila sama, kuning bertanda bila beda, "–" bila belum dilaporkan/belum sinkron.
 - **Form Input** — 3 isian Usaha + 3 isian Keluarga (Pindah / Keluar / Tidak ada informasi),
   catatan opsional, validasi bilangan bulat ≥ 0, mode edit bila sudah pernah diisi.
   Di dekat tiap subtotal muncul **chip referensi** berisi angka "tidak ditemukan"
@@ -26,6 +28,8 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   membantu PML memperkirakan dan menyelaraskan angkanya.
 - **Dashboard Rekap** — kartu KPI, donut chart breakdown alasan (Chart.js),
   rekap per kecamatan, tabel progres per PML (bisa diurutkan & dicari), tombol muat ulang.
+  Kedua tabel juga punya kolom **Selisih Usaha/Keluarga** agregat terhadap Monitoring SE2026
+  (dihitung atas Sub-SLS yang sudah dilaporkan, konsisten dengan kolom di Daftar Sub-SLS).
 - Mobile-friendly: tabel bisa di-scroll ke samping dengan kolom Sub-SLS beku (sticky)
   dan font mengecil di layar sempit. Bahasa Indonesia.
 
