@@ -81,16 +81,21 @@ thead th{
   background:#f8fafc; position:sticky; top:0; z-index:2;
 }
 /* Tabel utama: font kecil + 2 kolom pertama beku saat scroll samping */
-#tbl{font-size:13px; min-width:860px}
+#tbl{font-size:13px; min-width:1000px}
 #tbl th, #tbl td{padding:7px 8px}
-#tbl th:nth-child(2), #tbl td:nth-child(2){width:62px; min-width:62px}
+#tbl th:nth-child(2), #tbl td:nth-child(2){width:62px; min-width:62px}          /* Aksi */
 #tbl th:nth-child(3), #tbl td:nth-child(3),
-#tbl th:nth-child(4), #tbl td:nth-child(4){min-width:110px}
-#tbl th:nth-child(5), #tbl td:nth-child(5){min-width:90px}
+#tbl th:nth-child(4), #tbl td:nth-child(4){min-width:110px}                     /* PPL, PML */
+#tbl th:nth-child(5), #tbl td:nth-child(5){min-width:90px}                      /* Status */
 #tbl th:nth-child(6), #tbl td:nth-child(6),
-#tbl th:nth-child(7), #tbl td:nth-child(7){min-width:65px}
+#tbl th:nth-child(7), #tbl td:nth-child(7),
 #tbl th:nth-child(8), #tbl td:nth-child(8),
-#tbl th:nth-child(9), #tbl td:nth-child(9){min-width:120px}
+#tbl th:nth-child(9), #tbl td:nth-child(9){min-width:72px}                      /* Usaha, Sel.Usaha, Keluarga, Sel.Keluarga */
+#tbl th:nth-child(10), #tbl td:nth-child(10),
+#tbl th:nth-child(11), #tbl td:nth-child(11){min-width:120px}                   /* Desa, Kecamatan */
+#tbl td.sel{font-weight:700}
+#tbl td.sel-ok{color:var(--ok)}
+#tbl td.sel-diff{color:var(--warn)}
 #tbl thead th:first-child{position:sticky; left:0; z-index:3; background:#f8fafc}
 #tbl tbody tr.data-row td:first-child{
   position:sticky; left:0; z-index:1; background:var(--card);
@@ -124,6 +129,8 @@ tr.detail-row td{background:#f8fafc; padding:12px 16px}
 .detail-box h4{margin:0 0 6px; font-size:13px}
 .detail-box table{min-width:0}
 .detail-box td{padding:3px 6px; border:none; font-size:13px}
+.detail-box .ref-row td{color:var(--mut)}
+.detail-box .ref-row:first-of-type td{border-top:1px solid var(--line); padding-top:6px}
 .empty-row td{text-align:center; padding:30px; color:var(--mut)}
 
 /* ===== Paginasi ===== */
@@ -152,8 +159,16 @@ legend{font-weight:800; padding:0 6px}
 .num-field.invalid input{border-color:var(--err); background:var(--err-bg)}
 .num-field .fe{display:none; color:var(--err); font-size:12px; font-style:normal}
 .num-field.invalid .fe{display:block}
-.subtotal{margin-top:10px; font-size:13px; color:var(--mut)}
+.subtotal{margin-top:10px; font-size:13px; color:var(--mut); display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .subtotal b{color:var(--ink)}
+.ref-chip{
+  display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px;
+  font-size:12px; font-weight:700; background:var(--pri-soft); color:var(--pri-dark); white-space:nowrap;
+}
+.ref-chip.ok{background:var(--ok-bg); color:var(--ok)}
+.ref-chip.warn{background:var(--warn-bg); color:var(--warn)}
+.ref-chip .ref-note{font-weight:600; opacity:.9}
+.ref-hint{font-size:12px; color:var(--mut); margin-top:2px}
 .catatan-wrap{margin-top:14px}
 .catatan-wrap textarea{
   width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 10px; min-height:70px; resize:vertical;
@@ -210,7 +225,7 @@ th.sortable:hover{color:var(--pri)}
 /* ===== Mobile: font lebih kecil, tabel tetap scroll samping ===== */
 @media (max-width:760px){
   .brand h1{font-size:14px}
-  #tbl{font-size:12px; min-width:720px}
+  #tbl{font-size:12px; min-width:860px}
   #tbl tbody tr.data-row td:first-child{width:130px; min-width:130px; max-width:130px}
   #tbl thead th:nth-child(2),
   #tbl tbody tr.data-row td:nth-child(2){left:130px}
@@ -218,9 +233,11 @@ th.sortable:hover{color:var(--pri)}
   #tbl th:nth-child(4), #tbl td:nth-child(4){min-width:90px}
   #tbl th:nth-child(5), #tbl td:nth-child(5){min-width:80px}
   #tbl th:nth-child(6), #tbl td:nth-child(6),
-  #tbl th:nth-child(7), #tbl td:nth-child(7){min-width:55px}
+  #tbl th:nth-child(7), #tbl td:nth-child(7),
   #tbl th:nth-child(8), #tbl td:nth-child(8),
-  #tbl th:nth-child(9), #tbl td:nth-child(9){min-width:100px}
+  #tbl th:nth-child(9), #tbl td:nth-child(9){min-width:56px}
+  #tbl th:nth-child(10), #tbl td:nth-child(10),
+  #tbl th:nth-child(11), #tbl td:nth-child(11){min-width:100px}
 }
 </style>
 </head>
@@ -269,7 +286,11 @@ th.sortable:hover{color:var(--pri)}
         <thead><tr>
           <th>Sub-SLS</th><th>Aksi</th>
           <th>PPL</th><th>PML</th><th>Status</th>
-          <th class="num">Usaha</th><th class="num">Keluarga</th><th>Desa</th><th>Kecamatan</th>
+          <th class="num">Usaha</th>
+          <th class="num" title="Laporan &minus; hasil Monitoring SE2026">Selisih Usaha</th>
+          <th class="num">Keluarga</th>
+          <th class="num" title="Laporan &minus; hasil Monitoring SE2026">Selisih Keluarga</th>
+          <th>Desa</th><th>Kecamatan</th>
         </tr></thead>
         <tbody id="tbl-body"></tbody>
       </table>
@@ -313,7 +334,8 @@ th.sortable:hover{color:var(--pri)}
             <input type="number" min="0" step="1" inputmode="numeric" id="in-u-noinfo">
             <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
         </div>
-        <div class="subtotal">Total Usaha tidak ditemukan: <b id="sub-u">0</b></div>
+        <div class="subtotal">Total Usaha tidak ditemukan: <b id="sub-u">0</b>
+          <span class="ref-chip" id="ref-u" hidden></span></div>
       </fieldset>
 
       <fieldset>
@@ -329,7 +351,8 @@ th.sortable:hover{color:var(--pri)}
             <input type="number" min="0" step="1" inputmode="numeric" id="in-k-noinfo">
             <em class="fe">Wajib diisi bilangan bulat &ge; 0</em></label>
         </div>
-        <div class="subtotal">Total Keluarga tidak ditemukan: <b id="sub-k">0</b></div>
+        <div class="subtotal">Total Keluarga tidak ditemukan: <b id="sub-k">0</b>
+          <span class="ref-chip" id="ref-k" hidden></span></div>
       </fieldset>
 
       <div class="catatan-wrap">
@@ -420,6 +443,9 @@ var LAP_COLS = ['id','u_pindah','u_keluar','u_noinfo','k_pindah','k_keluar','k_n
 var state = {
   master: [],        // array objek Sub-SLS
   laporan: {},       // id -> objek laporan
+  ref: {},           // id -> {u,k} referensi tidak ditemukan dari monitoring
+  refSyncedAt: '',
+  formRef: null,     // referensi Sub-SLS yang sedang dibuka di form
   view: 'list',
   filters: {kec:'',desa:'',ppl:'',pml:'',status:'',q:''},
   page: 1, perPage: 25,
@@ -484,6 +510,11 @@ function loadData(){
       var o = {}; LAP_COLS.forEach(function(c,i){ o[c] = r[i]; });
       state.laporan[o.id] = o;
     });
+    state.ref = {};
+    (data.ref || []).forEach(function(r){
+      state.ref[String(r[0])] = { u: Number(r[1]) || 0, k: Number(r[2]) || 0 };
+    });
+    state.refSyncedAt = data.refSyncedAt || '';
     state.loadedAt = new Date();
     $('loading').hidden = true;
     renderFilters();
@@ -623,7 +654,7 @@ function renderList(){
 
   var html = '';
   if (!pageRows.length) {
-    html = '<tr class="empty-row"><td colspan="9">Tidak ada Sub-SLS yang cocok dengan filter/pencarian.</td></tr>';
+    html = '<tr class="empty-row"><td colspan="11">Tidak ada Sub-SLS yang cocok dengan filter/pencarian.</td></tr>';
   }
   pageRows.forEach(function(m){
     var l = state.laporan[m.id];
@@ -636,7 +667,9 @@ function renderList(){
       '<td data-label="PML">' + esc(m.pml) + '</td>' +
       '<td data-label="Status">' + (l ? '<span class="badge ok">&#10003; Sudah diisi</span>' : '<span class="badge belum">Belum diisi</span>') + '</td>' +
       '<td data-label="Usaha" class="num">' + (l ? fmt(totU(l)) : '&ndash;') + '</td>' +
+      selCell('Selisih Usaha', l ? totU(l) : 0, state.ref[m.id] ? state.ref[m.id].u : 0, !!l) +
       '<td data-label="Keluarga" class="num">' + (l ? fmt(totK(l)) : '&ndash;') + '</td>' +
+      selCell('Selisih Keluarga', l ? totK(l) : 0, state.ref[m.id] ? state.ref[m.id].k : 0, !!l) +
       '<td data-label="Desa">' + esc(m.desa) + '</td>' +
       '<td data-label="Kecamatan">' + esc(m.kec) + '</td>' +
       '</tr>';
@@ -656,27 +689,53 @@ function stat(label, value, sub, cls){
     (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>';
 }
 
+/* Sel selisih laporan PML vs hasil monitoring. "–" bila belum dilaporkan / belum sinkron. */
+function selCell(label, report, ref, reported){
+  if (!reported || !state.refSyncedAt) {
+    return '<td data-label="' + label + '" class="num sel">&ndash;</td>';
+  }
+  var d = report - ref;
+  var cls = d === 0 ? 'sel-ok' : 'sel-diff';
+  var txt = d === 0 ? '0' : (d > 0 ? '+' + fmt(d) : '&minus;' + fmt(-d));
+  var ttl = 'Laporan ' + fmt(report) + ' − Monitoring ' + fmt(ref);
+  return '<td data-label="' + label + '" class="num sel ' + cls + '" title="' + ttl + '">' + txt + '</td>';
+}
+
+/* Baris "Hasil Monitoring" + selisih di dalam detail expand (kosong bila belum sinkron). */
+function detailRefRows(report, ref){
+  if (!state.refSyncedAt) return '';
+  var d = report - ref;
+  var sel = d === 0
+    ? '<span style="color:var(--ok);font-weight:700">0 &#10003;</span>'
+    : '<span style="color:var(--warn);font-weight:700">' + (d > 0 ? '+' : '&minus;') + fmt(Math.abs(d)) + '</span>';
+  return '<tr class="ref-row"><td>Hasil Monitoring SE2026</td><td class="num">' + fmt(ref) + '</td></tr>' +
+    '<tr class="ref-row"><td>Selisih (laporan &minus; monitoring)</td><td class="num">' + sel + '</td></tr>';
+}
+
 function detailRow(m, l){
   var inner;
   if (!l) {
     inner = '<span class="muted">Belum ada laporan untuk Sub-SLS ini. Klik tombol "Isi" untuk mengisi.</span>';
   } else {
+    var rf = state.ref[m.id] || {u:0, k:0};
     inner = '<div class="detail-grid">' +
       '<div class="detail-box"><h4>&#127970; Usaha &mdash; total ' + fmt(totU(l)) + '</h4><table>' +
         '<tr><td>Pindah Sub-SLS</td><td class="num">' + fmt(l.u_pindah) + '</td></tr>' +
         '<tr><td>Keluar Sub-SLS</td><td class="num">' + fmt(l.u_keluar) + '</td></tr>' +
-        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.u_noinfo) + '</td></tr></table></div>' +
+        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.u_noinfo) + '</td></tr>' +
+        detailRefRows(totU(l), rf.u) + '</table></div>' +
       '<div class="detail-box"><h4>&#127968; Keluarga &mdash; total ' + fmt(totK(l)) + '</h4><table>' +
         '<tr><td>Pindah Sub-SLS</td><td class="num">' + fmt(l.k_pindah) + '</td></tr>' +
         '<tr><td>Keluar Sub-SLS</td><td class="num">' + fmt(l.k_keluar) + '</td></tr>' +
-        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.k_noinfo) + '</td></tr></table></div>' +
+        '<tr><td>Tidak ada informasi</td><td class="num">' + fmt(l.k_noinfo) + '</td></tr>' +
+        detailRefRows(totK(l), rf.k) + '</table></div>' +
       '<div class="detail-box"><h4>Info</h4>' +
         (l.catatan ? '<div style="font-size:13px"><b>Catatan:</b> ' + esc(l.catatan) + '</div>' : '') +
         '<div class="muted" style="font-size:12px;margin-top:4px">Terakhir diperbarui: ' + esc(l.updated) + ' WITA</div>' +
         '<div class="muted" style="font-size:12px">ID: ' + esc(m.id) + '</div></div>' +
       '</div>';
   }
-  return '<tr class="detail-row"><td colspan="9">' + inner + '</td></tr>';
+  return '<tr class="detail-row"><td colspan="11">' + inner + '</td></tr>';
 }
 
 function toggleDetail(id){
@@ -706,6 +765,7 @@ function openForm(id){
   var m = state.master.find(function(x){ return x.id === id; });
   if (!m) { toast('Sub-SLS tidak ditemukan', 'err'); return; }
   state.currentId = id;
+  state.formRef = state.ref[id] || null;
   var l = state.laporan[id];
 
   $('form-info').innerHTML =
@@ -736,8 +796,30 @@ function updateSubtotals(){
       return acc + (isFinite(v) && v >= 0 ? Math.floor(v) : 0);
     }, 0);
   };
-  $('sub-u').textContent = fmt(s(['in-u-pindah','in-u-keluar','in-u-noinfo']));
-  $('sub-k').textContent = fmt(s(['in-k-pindah','in-k-keluar','in-k-noinfo']));
+  var tu = s(['in-u-pindah','in-u-keluar','in-u-noinfo']);
+  var tk = s(['in-k-pindah','in-k-keluar','in-k-noinfo']);
+  $('sub-u').textContent = fmt(tu);
+  $('sub-k').textContent = fmt(tk);
+  renderRefChip('ref-u', tu, state.formRef ? state.formRef.u : null);
+  renderRefChip('ref-k', tk, state.formRef ? state.formRef.k : null);
+}
+
+/* Chip referensi monitoring di dekat subtotal. refVal null = tak ada data referensi. */
+function renderRefChip(elId, inputTotal, refVal){
+  var el = $(elId);
+  if (refVal === null || refVal === undefined) { el.hidden = true; return; }
+  el.hidden = false;
+  var note, cls = 'ref-chip';
+  if (inputTotal === refVal) { cls += ' ok'; note = '&#10003; sesuai'; }
+  else {
+    cls += ' warn';
+    var d = inputTotal - refVal;
+    note = d > 0 ? ('input lebih ' + fmt(d)) : ('input kurang ' + fmt(-d));
+  }
+  el.className = cls;
+  el.innerHTML = 'Referensi monitoring: <b>' + fmt(refVal) + '</b> <span class="ref-note">(' + note + ')</span>';
+  el.title = 'Angka "tidak ditemukan" dari sistem Monitoring SE2026'
+    + (state.refSyncedAt ? ' · sinkron ' + state.refSyncedAt + ' WITA' : '');
 }
 
 function submitForm(e){
@@ -890,7 +972,7 @@ function drawDonut(canvasId, data, colors){
 /* ---------- data pratinjau lokal (di luar Apps Script) ---------- */
 var MOCK = (function(){
   var kec = ['Gerokgak','Seririt','Banjar'];
-  var master = [], lap = [];
+  var master = [], lap = [], ref = [];
   var n = 0;
   kec.forEach(function(kc, ki){
     for (var d = 1; d <= 2; d++) {
@@ -902,13 +984,14 @@ var MOCK = (function(){
           master.push([id,'Bali','Buleleng',kc,desa,'000'+s,'0'+sub,'Banjar Contoh '+s,
             'PPL ' + kc + ' ' + Math.ceil(s/2), 'PML ' + kc + ' ' + d]);
           if (n % 3 === 0) lap.push([id, n%4, n%3, n%2, n%5, n%2, n%3, n%6===0?'Catatan contoh':'', '2026-07-0' + (n%5+1) + ' 10:1' + (n%10) + ':00']);
+          if (n % 2 === 0) ref.push([id, (n*7) % 20, (n*3) % 11]); // referensi contoh
         }
       }
     }
   });
   return {
     getAppData: function(){
-      return new Promise(function(res){ setTimeout(function(){ res({master:master, laporan:lap, generatedAt:''}); }, 400); });
+      return new Promise(function(res){ setTimeout(function(){ res({master:master, laporan:lap, ref:ref, refSyncedAt:'2026-07-06 05:00:00', generatedAt:''}); }, 400); });
     },
     saveLaporan: function(p){
       return new Promise(function(res){

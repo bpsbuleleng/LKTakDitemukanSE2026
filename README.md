@@ -21,6 +21,9 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   (Provinsi/Kabupaten tidak ditampilkan karena aplikasi dipakai satu kabupaten.)
 - **Form Input** — 3 isian Usaha + 3 isian Keluarga (Pindah / Keluar / Tidak ada informasi),
   catatan opsional, validasi bilangan bulat ≥ 0, mode edit bila sudah pernah diisi.
+  Di dekat tiap subtotal muncul **chip referensi** berisi angka "tidak ditemukan"
+  dari sistem Monitoring SE2026 (total saja) — hijau bila cocok, kuning bila selisih,
+  membantu PML memperkirakan dan menyelaraskan angkanya.
 - **Dashboard Rekap** — kartu KPI, donut chart breakdown alasan (Chart.js),
   rekap per kecamatan, tabel progres per PML (bisa diurutkan & dicari), tombol muat ulang.
 - Mobile-friendly: tabel bisa di-scroll ke samping dengan kolom Sub-SLS beku (sticky)
@@ -42,6 +45,39 @@ kddesa, kdsls, kdsubsls, nmppl, nmpml, nmprov, nmkab, nmkec, nmdesa, nmsls`.
 | `catatan` | catatan bebas opsional (maks. 500 karakter) |
 | `terakhir_diperbarui` | timestamp WITA, diisi otomatis |
 
+**Sheet `Ref_Monitoring`** (dibuat/ditulis-ulang otomatis oleh fitur sinkron, satu baris per
+`id_subsls` yang punya angka): `id_subsls, ref_usaha_tidak_ditemukan,
+ref_keluarga_tidak_ditemukan, terakhir_sinkron`. Sumber angka acuan yang ditampilkan di form.
+
+## Sinkronisasi referensi Monitoring SE2026
+
+Situs [Monitoring SE2026](https://bpsbuleleng.github.io/MonitoringSE2026) adalah halaman
+statis; seluruh data rekap (termasuk tab **Sub-SLS**) tertanam sebagai JSON
+`{"fields":[…],"rows":[[…]]}` di dalam `index.html`-nya. Jadi tidak perlu "bot" browser —
+`syncMonitoring()` cukup mengambil HTML via `UrlFetchApp`, mem-parse angka **Usaha Tidak
+Ditemukan** (`ulTdk`) dan **Keluarga Tidak Ditemukan** (`klTdk`) per baris, lalu mencocokkan
+ke `master` lewat ID:
+
+> `idsubsls` (16 digit) = `idsls` (14 digit dari monitoring) + `kdsub` yang dipad 2 digit
+
+Pencocokan ID ini 100% pas (2.601/2.601 Sub-SLS), lebih andal daripada mencocokkan nama
+(nama di monitoring HURUF BESAR, di master Title Case). Hasilnya ditulis ke `Ref_Monitoring`.
+
+**Cara menjalankan** (dari spreadsheet, menu **LK Tak Ditemukan**):
+- **Sinkronkan Data Monitoring** — jalan sekali sekarang. Menampilkan ringkasan jumlah & total.
+- **Jadwalkan Sinkron Harian (otomatis)** — memasang trigger harian ±05:00 WITA.
+
+**Otorisasi pertama kali** (karena mengakses internet): jika muncul *"You do not have
+permission to call UrlFetchApp.fetch"*, pastikan `appsscript.json` sudah memuat scope
+`script.external_request` (lihat di atas), lalu di editor Apps Script pilih fungsi
+`syncMonitoring` → **Run** → **Review permissions** → pilih akun → **Advanced → Go to
+project → Allow** (ada butir *"Connect to an external service"*). Setelah diizinkan sekali,
+menu dan trigger harian berjalan tanpa diminta lagi.
+
+Aplikasi web hanya **membaca** `Ref_Monitoring` (tidak ikut memicu fetch berat), jadi para
+PML tinggal melihat angkanya; klik **Muat Ulang Data** di Dashboard untuk menarik hasil
+sinkron terbaru.
+
 ## Cara deploy
 
 1. Buka spreadsheet di atas → menu **Ekstensi → Apps Script**.
@@ -49,8 +85,12 @@ kddesa, kdsls, kdsubsls, nmppl, nmpml, nmprov, nmkab, nmkec, nmdesa, nmsls`.
    - Ganti isi `Code.gs` dengan isi file [Code.gs](Code.gs).
    - Tambah file HTML baru bernama persis **`Index`** (menu + → HTML; editor menambahkan
      `.html` otomatis — jangan ketik `Index.html`), isi dengan [Index.html](Index.html).
-   - (Opsional) Setelan proyek → centang *Show "appsscript.json" manifest file*, lalu
-     samakan dengan [appsscript.json](appsscript.json).
+   - **Wajib** samakan manifest: Setelan proyek (⚙️) → centang *Show "appsscript.json"
+     manifest file*, lalu buka `appsscript.json` di editor dan samakan dengan
+     [appsscript.json](appsscript.json). Manifest ini memuat `oauthScopes` — termasuk
+     `script.external_request` yang diperlukan fitur sinkron monitoring (`UrlFetchApp`).
+     Tanpa scope ini, sinkron gagal dengan pesan *"You do not have permission to call
+     UrlFetchApp.fetch"*.
 3. **Deploy → New deployment → Web app**:
    - *Execute as*: **Me** (akun pemilik spreadsheet).
    - *Who has access*: **Anyone** (Siapa saja).
