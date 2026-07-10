@@ -26,10 +26,14 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   Di dekat tiap subtotal muncul **chip referensi** berisi angka "tidak ditemukan"
   dari sistem Monitoring SE2026 (total saja) — hijau bila cocok, kuning bila selisih,
   membantu PML memperkirakan dan menyelaraskan angkanya.
-- **Dashboard Rekap** — kartu KPI, donut chart breakdown alasan (Chart.js),
-  rekap per kecamatan, tabel progres per PML (bisa diurutkan & dicari), tombol muat ulang.
-  Kedua tabel juga punya kolom **Selisih Usaha/Keluarga** agregat terhadap Monitoring SE2026
-  (dihitung atas Sub-SLS yang sudah dilaporkan, konsisten dengan kolom di Daftar Sub-SLS).
+- **Dashboard Rekap** — filter cascading (Kecamatan → Desa → SLS) + filter PPL/PML dan
+  bilah pencarian yang berlaku untuk seluruh isi dashboard (KPI, grafik, rekapitulasi);
+  kartu KPI; donut chart breakdown alasan (Chart.js); satu tabel **Rekapitulasi** bertab
+  (Kecamatan / Desa/Kelurahan / SLS / PPL / PML) — tiap baris memuat jumlah Sub-SLS,
+  sudah/belum lapor, rincian per 3 jenis tak ditemukan (Pindah / Keluar / Tanpa informasi)
+  untuk Usaha & Keluarga beserta totalnya, kolom **Selisih** agregat terhadap Monitoring
+  SE2026 (dihitung atas Sub-SLS yang sudah dilaporkan, konsisten dengan Daftar Sub-SLS),
+  serta total gabungan U+K; semua kolom bisa diurutkan. Tombol muat ulang data.
 - Mobile-friendly: tabel bisa di-scroll ke samping dengan kolom Sub-SLS beku (sticky)
   dan font mengecil di layar sempit. Bahasa Indonesia.
 

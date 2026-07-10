@@ -182,26 +182,30 @@ legend{font-weight:800; padding:0 6px}
 .chart-card h3{font-size:14px; margin-bottom:8px}
 .chart-box{position:relative; height:250px}
 .chart-total{font-size:12px; color:var(--mut); margin-top:6px}
-.dash-tables{display:grid; grid-template-columns:1fr; gap:14px}
-.dash-tables h3{font-size:15px; margin:0 0 8px}
-.dash-tables .table-wrap table{min-width:860px; font-size:13px}
-.dash-tables .table-wrap thead th{position:sticky; top:0; z-index:2; background:#f8fafc}
-.dash-tables .table-wrap thead th:first-child{
+.rekap h3{font-size:15px; margin:0}
+.rekap-note{font-size:12px; color:var(--mut); margin-top:2px}
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin:10px 0}
+.tab-btn{
+  border:1px solid var(--line); background:var(--card); border-radius:999px;
+  padding:6px 14px; font-weight:600; color:var(--mut); font-size:13px;
+}
+.tab-btn.active{background:var(--pri); border-color:var(--pri); color:#fff}
+#rekap-tbl{min-width:1240px; font-size:13px}
+#rekap-tbl th, #rekap-tbl td{padding:7px 8px}
+#rekap-tbl thead th.grp{text-align:center; border-left:1px solid var(--line)}
+#rekap-tbl th.grp-start, #rekap-tbl td.grp-start{border-left:1px solid var(--line)}
+#rekap-tbl thead th.colname{
   position:sticky; left:0; z-index:3; background:#f8fafc;
   box-shadow:2px 0 4px -2px rgba(15,23,42,.15);
 }
-.dash-tables .table-wrap tbody td:first-child{
+#rekap-tbl tbody td:first-child{
   position:sticky; left:0; z-index:1; background:var(--card);
-  min-width:160px; max-width:200px; font-weight:600;
+  min-width:170px; max-width:230px; font-weight:600;
   box-shadow:2px 0 4px -2px rgba(15,23,42,.15);
 }
-.dash-tables .table-wrap tbody tr:hover td:first-child{background:#f8fafc}
-.progress{background:var(--line); border-radius:999px; height:8px; min-width:70px; overflow:hidden}
-.progress i{display:block; height:100%; background:var(--ok); border-radius:999px}
+#rekap-tbl tbody tr:hover td:first-child{background:#f8fafc}
 th.sortable{cursor:pointer; user-select:none}
 th.sortable:hover{color:var(--pri)}
-.pml-search{margin-bottom:8px}
-.pml-search input{border:1px solid var(--line); border-radius:8px; padding:7px 10px; width:100%; max-width:320px}
 
 /* ===== Toast & loading ===== */
 #toast{
@@ -381,6 +385,20 @@ th.sortable:hover{color:var(--pri)}
       <button class="btn btn-pri" id="btn-refresh" onclick="refreshData()">&#10227; Muat Ulang Data</button>
     </div>
 
+    <div class="card filters">
+      <div class="filter-grid">
+        <label>Kecamatan<select id="d-kec"></select></label>
+        <label>Desa/Kelurahan<select id="d-desa"></select></label>
+        <label>SLS<select id="d-sls"></select></label>
+        <label>Nama PPL<select id="d-ppl"></select></label>
+        <label>Nama PML<select id="d-pml"></select></label>
+      </div>
+      <div class="searchrow">
+        <input id="d-q" type="search" placeholder="Cari SLS, desa, kecamatan, nama PPL, atau nama PML&hellip;">
+        <button class="btn" onclick="resetDashFilters()">Reset Filter</button>
+      </div>
+    </div>
+
     <div class="stats" id="dash-kpi"></div>
 
     <div class="charts">
@@ -396,39 +414,21 @@ th.sortable:hover{color:var(--pri)}
       </div>
     </div>
 
-    <div class="dash-tables">
-      <div>
-        <h3>Rekap per Kecamatan <small class="muted">(urut total tidak ditemukan terbanyak)</small></h3>
-        <div class="table-wrap"><table>
-          <thead><tr>
-            <th>Kecamatan</th><th class="num">Sub-SLS</th><th class="num">Sudah Lapor</th>
-            <th>Progres</th><th class="num">Usaha</th>
-            <th class="num" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Usaha</th>
-            <th class="num">Keluarga</th>
-            <th class="num" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Keluarga</th>
-            <th class="num">Total</th>
-          </tr></thead>
-          <tbody id="kec-body"></tbody>
-        </table></div>
+    <div class="rekap">
+      <h3>Rekapitulasi</h3>
+      <div class="rekap-note">Mengikuti filter di atas &middot; klik judul kolom untuk mengurutkan &middot;
+        Selisih = laporan &minus; Monitoring SE2026 (Sub-SLS yang sudah dilaporkan)</div>
+      <div class="tabs" id="rekap-tabs">
+        <button class="tab-btn active" data-tab="kec">Kecamatan</button>
+        <button class="tab-btn" data-tab="desa">Desa/Kelurahan</button>
+        <button class="tab-btn" data-tab="sls">SLS</button>
+        <button class="tab-btn" data-tab="ppl">PPL</button>
+        <button class="tab-btn" data-tab="pml">PML</button>
       </div>
-
-      <div>
-        <h3>Progres per PML <small class="muted">(klik judul kolom untuk mengurutkan)</small></h3>
-        <div class="pml-search"><input id="pml-q" type="search" placeholder="Cari nama PML&hellip;"></div>
-        <div class="table-wrap"><table>
-          <thead><tr>
-            <th class="sortable" data-k="pml">Nama PML</th>
-            <th class="sortable num" data-k="total">Ditugaskan</th>
-            <th class="sortable num" data-k="done">Dilaporkan</th>
-            <th class="sortable" data-k="pct">Progres</th>
-            <th class="sortable num" data-k="usaha">Usaha</th>
-            <th class="sortable num" data-k="selU" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Usaha</th>
-            <th class="sortable num" data-k="keluarga">Keluarga</th>
-            <th class="sortable num" data-k="selK" title="Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)">Selisih Keluarga</th>
-          </tr></thead>
-          <tbody id="pml-body"></tbody>
-        </table></div>
-      </div>
+      <div class="table-wrap"><table id="rekap-tbl">
+        <thead id="rekap-head"></thead>
+        <tbody id="rekap-body"></tbody>
+      </table></div>
     </div>
   </section>
 
@@ -454,11 +454,13 @@ var state = {
   formRef: null,     // referensi Sub-SLS yang sedang dibuka di form
   view: 'list',
   filters: {kec:'',desa:'',ppl:'',pml:'',status:'',q:''},
+  dashFilters: {kec:'',desa:'',sls:'',ppl:'',pml:'',q:''},
+  rekapTab: 'kec',
+  rekapSort: {key:'name', dir:1},
   page: 1, perPage: 25,
   expandedId: null,
   currentId: null,
   loadedAt: null,
-  pmlSort: {key:'pml', dir:1},
   charts: {}
 };
 
@@ -557,12 +559,13 @@ function renderView(){
 }
 
 /* ---------- filter ---------- */
-var GEO = ['kec','desa'];
+var GEO = ['kec','desa'];            // cascading filter halaman Daftar
+var GEO_DASH = ['kec','desa','sls']; // cascading filter Dashboard
 
-function matchGeoUpTo(m, level){
+function matchGeoUpTo(m, filters, geo, level){
   for (var i = 0; i < level; i++) {
-    var g = GEO[i];
-    if (state.filters[g] && m[g] !== state.filters[g]) return false;
+    var g = geo[i];
+    if (filters[g] && m[g] !== filters[g]) return false;
   }
   return true;
 }
@@ -576,23 +579,34 @@ function fillSelect(id, values, current, placeholder){
   el.innerHTML = opts;
 }
 
-function renderFilters(){
-  GEO.forEach(function(g, level){
+/* Isi dropdown cascading (geo) + PPL/PML untuk satu set filter (prefix 'f-' atau 'd-'). */
+function fillCascade(prefix, filters, geo){
+  geo.forEach(function(g, level){
     var vals = {};
-    state.master.forEach(function(m){ if (matchGeoUpTo(m, level)) vals[m[g]] = 1; });
+    state.master.forEach(function(m){ if (matchGeoUpTo(m, filters, geo, level)) vals[m[g]] = 1; });
     var sorted = Object.keys(vals).sort();
-    if (state.filters[g] && sorted.indexOf(state.filters[g]) < 0) state.filters[g] = '';
-    fillSelect('f-' + g, sorted, state.filters[g], 'Semua');
+    if (filters[g] && sorted.indexOf(filters[g]) < 0) filters[g] = '';
+    fillSelect(prefix + g, sorted, filters[g], 'Semua');
   });
   ['ppl','pml'].forEach(function(f){
     var vals = {};
-    state.master.forEach(function(m){ if (matchGeoUpTo(m, GEO.length)) vals[m[f]] = 1; });
+    state.master.forEach(function(m){ if (matchGeoUpTo(m, filters, geo, geo.length)) vals[m[f]] = 1; });
     var sorted = Object.keys(vals).sort();
-    if (state.filters[f] && sorted.indexOf(state.filters[f]) < 0) state.filters[f] = '';
-    fillSelect('f-' + f, sorted, state.filters[f], 'Semua');
+    if (filters[f] && sorted.indexOf(filters[f]) < 0) filters[f] = '';
+    fillSelect(prefix + f, sorted, filters[f], 'Semua');
   });
+}
+
+function renderFilters(){
+  fillCascade('f-', state.filters, GEO);
   $('f-status').value = state.filters.status;
   $('f-q').value = state.filters.q;
+}
+
+function renderDashFilters(){
+  fillCascade('d-', state.dashFilters, GEO_DASH);
+  var q = $('d-q');
+  if (q.value !== state.dashFilters.q) q.value = state.dashFilters.q;
 }
 
 function onFilterChange(field, value){
@@ -613,6 +627,18 @@ function resetFilters(){
   state.expandedId = null;
   renderFilters();
   renderList();
+}
+
+function onDashFilterChange(field, value){
+  state.dashFilters[field] = value;
+  var gi = GEO_DASH.indexOf(field);
+  if (gi >= 0) for (var i = gi + 1; i < GEO_DASH.length; i++) state.dashFilters[GEO_DASH[i]] = '';
+  renderDash();
+}
+
+function resetDashFilters(){
+  state.dashFilters = {kec:'',desa:'',sls:'',ppl:'',pml:'',q:''};
+  renderDash();
 }
 
 function filteredRows(){
@@ -873,25 +899,34 @@ function submitForm(e){
 }
 
 /* ---------- Halaman 3: dashboard ---------- */
-function renderDash(){
-  var total = state.master.length, sudah = 0;
-  var u = [0,0,0], k = [0,0,0];
-  var byKec = {}, byPml = {};
+function dashRows(){
+  var f = state.dashFilters, q = f.q.trim().toLowerCase();
+  return state.master.filter(function(m){
+    if (f.kec && m.kec !== f.kec) return false;
+    if (f.desa && m.desa !== f.desa) return false;
+    if (f.sls && m.sls !== f.sls) return false;
+    if (f.ppl && m.ppl !== f.ppl) return false;
+    if (f.pml && m.pml !== f.pml) return false;
+    if (q) {
+      var hay = (m.sls + ' ' + m.desa + ' ' + m.kec + ' ' + m.ppl + ' ' + m.pml + ' ' + m.id).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
 
-  state.master.forEach(function(m){
+function renderDash(){
+  renderDashFilters();
+  var rows = dashRows();
+  var total = rows.length, sudah = 0;
+  var u = [0,0,0], k = [0,0,0];
+
+  rows.forEach(function(m){
     var l = state.laporan[m.id];
-    if (!byKec[m.kec]) byKec[m.kec] = {kec:m.kec, total:0, done:0, usaha:0, keluarga:0, refU:0, refK:0};
-    if (!byPml[m.pml]) byPml[m.pml] = {pml:m.pml, total:0, done:0, usaha:0, keluarga:0, refU:0, refK:0};
-    byKec[m.kec].total++; byPml[m.pml].total++;
     if (l) {
       sudah++;
       u[0]+=l.u_pindah; u[1]+=l.u_keluar; u[2]+=l.u_noinfo;
       k[0]+=l.k_pindah; k[1]+=l.k_keluar; k[2]+=l.k_noinfo;
-      var rf = state.ref[m.id] || {u:0, k:0};
-      byKec[m.kec].done++; byKec[m.kec].usaha += totU(l); byKec[m.kec].keluarga += totK(l);
-      byKec[m.kec].refU += rf.u; byKec[m.kec].refK += rf.k;
-      byPml[m.pml].done++; byPml[m.pml].usaha += totU(l); byPml[m.pml].keluarga += totK(l);
-      byPml[m.pml].refU += rf.u; byPml[m.pml].refK += rf.k;
     }
   });
 
@@ -901,7 +936,7 @@ function renderDash(){
     ? 'Data dimuat: ' + state.loadedAt.toLocaleString('id-ID') : '';
 
   $('dash-kpi').innerHTML =
-    stat('Total Sub-SLS', fmt(total), '', 'pri') +
+    stat('Sub-SLS tampil', fmt(total), 'sesuai filter', 'pri') +
     stat('Sudah lapor', fmt(sudah), pct(sudah,total) + '%', 'ok') +
     stat('Belum lapor', fmt(total-sudah), pct(total-sudah,total) + '%', 'warn') +
     stat('Usaha tidak ditemukan', fmt(tU), '', '') +
@@ -913,55 +948,118 @@ function renderDash(){
   $('ch-usaha-t').textContent = 'Total: ' + fmt(tU) + ' usaha';
   $('ch-keluarga-t').textContent = 'Total: ' + fmt(tK) + ' keluarga';
 
-  // Rekap per kecamatan, urut total tidak ditemukan desc
-  var kecs = Object.keys(byKec).map(function(x){ return byKec[x]; });
-  kecs.sort(function(a,b){ return (b.usaha+b.keluarga) - (a.usaha+a.keluarga) || b.total - a.total; });
-  $('kec-body').innerHTML = kecs.map(function(r){
-    var p = pct(r.done, r.total);
-    return '<tr><td>' + esc(r.kec) + '</td>' +
-      '<td class="num">' + fmt(r.total) + '</td>' +
-      '<td class="num">' + fmt(r.done) + '</td>' +
-      '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + p + '%"></i></div><span style="font-size:12px">' + p + '%</span></div></td>' +
-      '<td class="num">' + fmt(r.usaha) + '</td>' +
-      selCell('Selisih Usaha', r.usaha, r.refU, r.done > 0) +
-      '<td class="num">' + fmt(r.keluarga) + '</td>' +
-      selCell('Selisih Keluarga', r.keluarga, r.refK, r.done > 0) +
-      '<td class="num"><b>' + fmt(r.usaha + r.keluarga) + '</b></td></tr>';
-  }).join('');
-
-  renderPmlTable(byPml);
+  renderRekap(rows);
 }
 
-var _byPmlCache = null;
-function renderPmlTable(byPml){
-  if (byPml) _byPmlCache = byPml;
-  if (!_byPmlCache) return;
-  var q = $('pml-q').value.trim().toLowerCase();
-  var rows = Object.keys(_byPmlCache).map(function(x){ return _byPmlCache[x]; });
-  rows.forEach(function(r){
-    r.pct = pct(r.done, r.total);
-    r.selU = r.usaha - r.refU;
-    r.selK = r.keluarga - r.refK;
-  });
-  if (q) rows = rows.filter(function(r){ return r.pml.toLowerCase().indexOf(q) >= 0; });
+/* ---------- Rekapitulasi bertab ---------- */
+/* Kunci grup memuat wilayah induk agar nama kembar (desa/SLS) tidak tercampur. */
+var REKAP_TABS = {
+  kec:  { col: 'Kecamatan',
+          key: function(m){ return m.kec; } },
+  desa: { col: 'Desa/Kelurahan',
+          key: function(m){ return m.kec + '|' + m.desa; },
+          name: function(m){ return m.desa; },
+          sub: function(m){ return m.kec; } },
+  sls:  { col: 'SLS',
+          key: function(m){ return m.kec + '|' + m.desa + '|' + m.kdsls; },
+          name: function(m){ return m.sls; },
+          sub: function(m){ return m.desa + ' · ' + m.kec; } },
+  ppl:  { col: 'Nama PPL', key: function(m){ return m.ppl; } },
+  pml:  { col: 'Nama PML', key: function(m){ return m.pml; } }
+};
 
-  var s = state.pmlSort;
-  rows.sort(function(a,b){
+function renderRekap(rows){
+  if (!rows) rows = dashRows();
+  var cfg = REKAP_TABS[state.rekapTab];
+  var groups = {};
+
+  rows.forEach(function(m){
+    var key = cfg.key(m);
+    var g = groups[key];
+    if (!g) {
+      g = groups[key] = { name: cfg.name ? cfg.name(m) : key, sub: cfg.sub ? cfg.sub(m) : '',
+        total:0, done:0, uP:0, uKel:0, uN:0, kP:0, kKel:0, kN:0,
+        usaha:0, keluarga:0, refU:0, refK:0 };
+    }
+    g.total++;
+    var l = state.laporan[m.id];
+    if (l) {
+      g.done++;
+      g.uP += l.u_pindah; g.uKel += l.u_keluar; g.uN += l.u_noinfo;
+      g.kP += l.k_pindah; g.kKel += l.k_keluar; g.kN += l.k_noinfo;
+      g.usaha += totU(l); g.keluarga += totK(l);
+      var rf = state.ref[m.id] || {u:0, k:0};
+      g.refU += rf.u; g.refK += rf.k;
+    }
+  });
+
+  var list = Object.keys(groups).map(function(x){
+    var g = groups[x];
+    g.belum = g.total - g.done;
+    g.selU = g.usaha - g.refU;
+    g.selK = g.keluarga - g.refK;
+    g.grand = g.usaha + g.keluarga;
+    return g;
+  });
+
+  var s = state.rekapSort;
+  list.sort(function(a,b){
     var va = a[s.key], vb = b[s.key];
     if (typeof va === 'string') return va.localeCompare(vb, 'id') * s.dir;
-    return (va - vb) * s.dir;
+    return (va - vb) * s.dir || a.name.localeCompare(b.name, 'id');
   });
 
-  $('pml-body').innerHTML = rows.map(function(r){
-    return '<tr><td>' + esc(r.pml) + '</td>' +
-      '<td class="num">' + fmt(r.total) + '</td>' +
-      '<td class="num">' + fmt(r.done) + '</td>' +
-      '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="flex:1"><i style="width:' + r.pct + '%"></i></div><span style="font-size:12px">' + r.pct + '%</span></div></td>' +
-      '<td class="num">' + fmt(r.usaha) + '</td>' +
-      selCell('Selisih Usaha', r.usaha, r.refU, r.done > 0) +
-      '<td class="num">' + fmt(r.keluarga) + '</td>' +
-      selCell('Selisih Keluarga', r.keluarga, r.refK, r.done > 0) + '</tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="8">Tidak ada PML yang cocok.</td></tr>';
+  renderRekapHead(cfg);
+  $('rekap-body').innerHTML = list.map(function(g){
+    return '<tr><td>' + esc(g.name) +
+      (g.sub ? '<div class="sls-code">' + esc(g.sub) + '</div>' : '') + '</td>' +
+      '<td class="num">' + fmt(g.total) + '</td>' +
+      '<td class="num">' + fmt(g.done) + '</td>' +
+      '<td class="num">' + fmt(g.belum) + '</td>' +
+      '<td class="num grp-start">' + fmt(g.uP) + '</td>' +
+      '<td class="num">' + fmt(g.uKel) + '</td>' +
+      '<td class="num">' + fmt(g.uN) + '</td>' +
+      '<td class="num"><b>' + fmt(g.usaha) + '</b></td>' +
+      selCell('Selisih Usaha', g.usaha, g.refU, g.done > 0) +
+      '<td class="num grp-start">' + fmt(g.kP) + '</td>' +
+      '<td class="num">' + fmt(g.kKel) + '</td>' +
+      '<td class="num">' + fmt(g.kN) + '</td>' +
+      '<td class="num"><b>' + fmt(g.keluarga) + '</b></td>' +
+      selCell('Selisih Keluarga', g.keluarga, g.refK, g.done > 0) +
+      '<td class="num grp-start"><b>' + fmt(g.grand) + '</b></td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="15">Tidak ada data yang cocok dengan filter.</td></tr>';
+}
+
+function sortTh(key, label, cls, span, title){
+  var s = state.rekapSort;
+  var arrow = s.key === key ? (s.dir > 0 ? ' &#9650;' : ' &#9660;') : '';
+  return '<th' + (span ? ' ' + span : '') + (title ? ' title="' + title + '"' : '') +
+    ' class="sortable ' + (cls || '') + '" data-k="' + key + '">' + label + arrow + '</th>';
+}
+
+function renderRekapHead(cfg){
+  var selTitle = 'Laporan &minus; Monitoring (Sub-SLS yang sudah dilaporkan)';
+  $('rekap-head').innerHTML =
+    '<tr>' +
+      sortTh('name', esc(cfg.col), 'colname', 'rowspan="2"') +
+      sortTh('total', 'Sub-SLS', 'num', 'rowspan="2"') +
+      sortTh('done', 'Sudah Lapor', 'num', 'rowspan="2"') +
+      sortTh('belum', 'Belum Lapor', 'num', 'rowspan="2"') +
+      '<th colspan="5" class="grp">&#127970; Usaha tidak ditemukan</th>' +
+      '<th colspan="5" class="grp">&#127968; Keluarga tidak ditemukan</th>' +
+      sortTh('grand', 'Total U+K', 'num grp-start', 'rowspan="2"') +
+    '</tr><tr>' +
+      sortTh('uP', 'Pindah', 'num grp-start') +
+      sortTh('uKel', 'Keluar', 'num') +
+      sortTh('uN', 'Tanpa Info', 'num') +
+      sortTh('usaha', 'Total', 'num') +
+      sortTh('selU', 'Selisih', 'num', '', selTitle) +
+      sortTh('kP', 'Pindah', 'num grp-start') +
+      sortTh('kKel', 'Keluar', 'num') +
+      sortTh('kN', 'Tanpa Info', 'num') +
+      sortTh('keluarga', 'Total', 'num') +
+      sortTh('selK', 'Selisih', 'num', '', selTitle) +
+    '</tr>';
 }
 
 function drawDonut(canvasId, data, colors){
@@ -1043,14 +1141,34 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   $('frm').addEventListener('submit', submitForm);
   FORM_INPUTS.forEach(function(f){ $(f.id).addEventListener('input', updateSubtotals); });
-  $('pml-q').addEventListener('input', debounce(function(){ renderPmlTable(); }, 200));
-  document.querySelectorAll('th.sortable').forEach(function(th){
-    th.addEventListener('click', function(){
-      var k = th.getAttribute('data-k');
-      if (state.pmlSort.key === k) state.pmlSort.dir *= -1;
-      else state.pmlSort = {key:k, dir: k === 'pml' ? 1 : -1};
-      renderPmlTable();
+
+  // Filter dashboard
+  ['kec','desa','sls','ppl','pml'].forEach(function(f){
+    $('d-' + f).addEventListener('change', function(){ onDashFilterChange(f, this.value); });
+  });
+  $('d-q').addEventListener('input', debounce(function(){
+    state.dashFilters.q = $('d-q').value;
+    renderDash();
+  }, 250));
+
+  // Tab & sort rekapitulasi (delegasi — header dirender ulang tiap tab/sort)
+  $('rekap-tabs').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    state.rekapTab = b.getAttribute('data-tab');
+    state.rekapSort = {key:'name', dir:1};
+    document.querySelectorAll('#rekap-tabs .tab-btn').forEach(function(x){
+      x.classList.toggle('active', x === b);
     });
+    renderRekap();
+  });
+  $('rekap-head').addEventListener('click', function(e){
+    var th = e.target.closest('th.sortable');
+    if (!th) return;
+    var k = th.getAttribute('data-k');
+    if (state.rekapSort.key === k) state.rekapSort.dir *= -1;
+    else state.rekapSort = {key:k, dir: k === 'name' ? 1 : -1};
+    renderRekap();
   });
 
   // Ingat filter PML terakhir milik pengguna perangkat ini
