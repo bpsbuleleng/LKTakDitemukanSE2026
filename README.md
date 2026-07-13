@@ -20,7 +20,7 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   Filter PML terakhir diingat per perangkat (localStorage).
   (Provinsi/Kabupaten tidak ditampilkan karena aplikasi dipakai satu kabupaten.)
   Kolom **Selisih Usaha** & **Selisih Keluarga** (laporan − hasil Monitoring SE2026):
-  hijau bila sama, kuning bertanda bila beda, "–" bila belum dilaporkan/belum sinkron.
+  hijau bila sama, merah bertanda bila beda, "–" bila belum dilaporkan/belum sinkron.
 - **Form Input** — 3 isian Usaha + 3 isian Keluarga (Pindah / Keluar / Tidak ada informasi),
   catatan opsional, validasi bilangan bulat ≥ 0, mode edit bila sudah pernah diisi.
   Di dekat tiap subtotal muncul **chip referensi** berisi angka "tidak ditemukan"
@@ -30,9 +30,10 @@ Dibangun sebagai **Google Apps Script Web App** dengan Google Sheets sebagai dat
   bilah pencarian yang berlaku untuk seluruh isi dashboard (KPI, grafik, rekapitulasi);
   kartu KPI; donut chart breakdown alasan (Chart.js); satu tabel **Rekapitulasi** bertab
   (Kecamatan / Desa/Kelurahan / SLS / PPL / PML) — tiap baris memuat jumlah Sub-SLS,
-  sudah/belum lapor, rincian per 3 jenis tak ditemukan (Pindah / Keluar / Tanpa informasi)
-  untuk Usaha & Keluarga beserta totalnya, kolom **Selisih** agregat terhadap Monitoring
-  SE2026 (dihitung atas Sub-SLS yang sudah dilaporkan, konsisten dengan Daftar Sub-SLS),
+  sudah/belum lapor, **% Lapor** minimalis (hijau bila 100%), rincian per 3 jenis tak
+  ditemukan (Pindah / Keluar / Tanpa informasi) untuk Usaha & Keluarga beserta totalnya,
+  kolom **Selisih** agregat terhadap Monitoring SE2026 (hijau bila 0, merah bila beda;
+  dihitung atas Sub-SLS yang sudah dilaporkan, konsisten dengan Daftar Sub-SLS),
   serta total gabungan U+K; semua kolom bisa diurutkan. Tombol muat ulang data.
 - Mobile-friendly: tabel bisa di-scroll ke samping dengan kolom Sub-SLS beku (sticky)
   dan font mengecil di layar sempit. Bahasa Indonesia.

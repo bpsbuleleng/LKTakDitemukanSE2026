@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pelaporan Assignment Tidak Ditemukan — SE2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --pri:#0b57d0; --pri-dark:#0842a0; --pri-soft:#e8f0fe;
@@ -95,7 +96,7 @@ thead th{
 #tbl th:nth-child(11), #tbl td:nth-child(11){min-width:120px}                   /* Desa, Kecamatan */
 td.sel{font-weight:700}
 td.sel-ok{color:var(--ok)}
-td.sel-diff{color:var(--warn)}
+td.sel-diff{color:#dc2626}
 #tbl thead th:first-child{position:sticky; left:0; z-index:3; background:#f8fafc}
 #tbl tbody tr.data-row td:first-child{
   position:sticky; left:0; z-index:1; background:var(--card);
@@ -183,6 +184,7 @@ legend{font-weight:800; padding:0 6px}
 .chart-box{position:relative; height:250px}
 .chart-total{font-size:12px; color:var(--mut); margin-top:6px}
 .rekap h3{font-size:15px; margin:0}
+.rekap-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
 .rekap-note{font-size:12px; color:var(--mut); margin-top:2px}
 .tabs{display:flex; gap:6px; flex-wrap:wrap; margin:10px 0}
 .tab-btn{
@@ -190,8 +192,11 @@ legend{font-weight:800; padding:0 6px}
   padding:6px 14px; font-weight:600; color:var(--mut); font-size:13px;
 }
 .tab-btn.active{background:var(--pri); border-color:var(--pri); color:#fff}
-#rekap-tbl{min-width:1240px; font-size:13px}
-#rekap-tbl th, #rekap-tbl td{padding:7px 8px}
+#rekap-tbl{min-width:1240px; font-size:12px}
+#rekap-tbl th, #rekap-tbl td{padding:6px 8px}
+#rekap-tbl thead th{text-transform:none; letter-spacing:0; font-size:11px}
+#rekap-tbl td.pctc{color:var(--mut); font-size:11px; white-space:nowrap}
+#rekap-tbl td.pctc.full{color:var(--ok); font-weight:700}
 #rekap-tbl thead th.grp{text-align:center; border-left:1px solid var(--line)}
 #rekap-tbl th.grp-start, #rekap-tbl td.grp-start{border-left:1px solid var(--line)}
 #rekap-tbl thead th.colname{
@@ -229,6 +234,7 @@ th.sortable:hover{color:var(--pri)}
 /* ===== Mobile: font lebih kecil, tabel tetap scroll samping ===== */
 @media (max-width:760px){
   .brand h1{font-size:14px}
+  #rekap-tbl{font-size:11px}
   #tbl{font-size:12px; min-width:860px}
   #tbl tbody tr.data-row td:first-child{width:130px; min-width:130px; max-width:130px}
   #tbl thead th:nth-child(2),
@@ -280,6 +286,7 @@ th.sortable:hover{color:var(--pri)}
       <div class="searchrow">
         <input id="f-q" type="search" placeholder="Cari Sub-SLS, desa, nama PPL, atau nama PML&hellip;">
         <button class="btn" onclick="resetFilters()">Reset Filter</button>
+        <button class="btn" id="btn-export-list" onclick="exportListXLSX()">&#128229; Ekspor Excel</button>
       </div>
     </div>
 
@@ -415,7 +422,10 @@ th.sortable:hover{color:var(--pri)}
     </div>
 
     <div class="rekap">
-      <h3>Rekapitulasi</h3>
+      <div class="rekap-head">
+        <h3>Rekapitulasi</h3>
+        <button class="btn" id="btn-export-rekap" onclick="exportRekapXLSX()">&#128229; Ekspor Excel</button>
+      </div>
       <div class="rekap-note">Mengikuti filter di atas &middot; klik judul kolom untuk mengurutkan &middot;
         Selisih = laporan &minus; Monitoring SE2026 (Sub-SLS yang sudah dilaporkan)</div>
       <div class="tabs" id="rekap-tabs">
@@ -457,6 +467,7 @@ var state = {
   dashFilters: {kec:'',desa:'',sls:'',ppl:'',pml:'',q:''},
   rekapTab: 'kec',
   rekapSort: {key:'name', dir:1},
+  rekapList: [], rekapCfg: null,
   page: 1, perPage: 25,
   expandedId: null,
   currentId: null,
@@ -739,7 +750,7 @@ function detailRefRows(report, ref){
   var d = report - ref;
   var sel = d === 0
     ? '<span style="color:var(--ok);font-weight:700">0 &#10003;</span>'
-    : '<span style="color:var(--warn);font-weight:700">' + (d > 0 ? '+' : '&minus;') + fmt(Math.abs(d)) + '</span>';
+    : '<span style="color:#dc2626;font-weight:700">' + (d > 0 ? '+' : '&minus;') + fmt(Math.abs(d)) + '</span>';
   return '<tr class="ref-row"><td>Hasil Monitoring SE2026</td><td class="num">' + fmt(ref) + '</td></tr>' +
     '<tr class="ref-row"><td>Selisih (laporan &minus; monitoring)</td><td class="num">' + sel + '</td></tr>';
 }
@@ -996,6 +1007,7 @@ function renderRekap(rows){
   var list = Object.keys(groups).map(function(x){
     var g = groups[x];
     g.belum = g.total - g.done;
+    g.pctDone = pct(g.done, g.total);
     g.selU = g.usaha - g.refU;
     g.selK = g.keluarga - g.refK;
     g.grand = g.usaha + g.keluarga;
@@ -1009,6 +1021,9 @@ function renderRekap(rows){
     return (va - vb) * s.dir || a.name.localeCompare(b.name, 'id');
   });
 
+  state.rekapList = list;
+  state.rekapCfg = cfg;
+
   renderRekapHead(cfg);
   $('rekap-body').innerHTML = list.map(function(g){
     return '<tr><td>' + esc(g.name) +
@@ -1016,6 +1031,7 @@ function renderRekap(rows){
       '<td class="num">' + fmt(g.total) + '</td>' +
       '<td class="num">' + fmt(g.done) + '</td>' +
       '<td class="num">' + fmt(g.belum) + '</td>' +
+      '<td class="num pctc' + (g.total && g.done === g.total ? ' full' : '') + '">' + g.pctDone + '%</td>' +
       '<td class="num grp-start">' + fmt(g.uP) + '</td>' +
       '<td class="num">' + fmt(g.uKel) + '</td>' +
       '<td class="num">' + fmt(g.uN) + '</td>' +
@@ -1027,7 +1043,7 @@ function renderRekap(rows){
       '<td class="num"><b>' + fmt(g.keluarga) + '</b></td>' +
       selCell('Selisih Keluarga', g.keluarga, g.refK, g.done > 0) +
       '<td class="num grp-start"><b>' + fmt(g.grand) + '</b></td></tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="15">Tidak ada data yang cocok dengan filter.</td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="16">Tidak ada data yang cocok dengan filter.</td></tr>';
 }
 
 function sortTh(key, label, cls, span, title){
@@ -1045,6 +1061,7 @@ function renderRekapHead(cfg){
       sortTh('total', 'Sub-SLS', 'num', 'rowspan="2"') +
       sortTh('done', 'Sudah Lapor', 'num', 'rowspan="2"') +
       sortTh('belum', 'Belum Lapor', 'num', 'rowspan="2"') +
+      sortTh('pctDone', '% Lapor', 'num', 'rowspan="2"') +
       '<th colspan="5" class="grp">&#127970; Usaha tidak ditemukan</th>' +
       '<th colspan="5" class="grp">&#127968; Keluarga tidak ditemukan</th>' +
       sortTh('grand', 'Total U+K', 'num grp-start', 'rowspan="2"') +
@@ -1060,6 +1077,73 @@ function renderRekapHead(cfg){
       sortTh('keluarga', 'Total', 'num') +
       sortTh('selK', 'Selisih', 'num', '', selTitle) +
     '</tr>';
+}
+
+/* ---------- Ekspor XLSX ---------- */
+function fileTimestamp(){
+  var d = new Date();
+  function p(n){ return String(n).padStart(2,'0'); }
+  return d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+}
+
+function downloadXLSX(filename, sheetName, aoa){
+  if (typeof XLSX === 'undefined') {
+    toast('Gagal mengekspor: pustaka Excel tidak dapat dimuat (butuh koneksi internet).', 'err');
+    return;
+  }
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
+  toast('Berkas Excel berhasil diunduh ✓', 'ok');
+}
+
+function exportListXLSX(){
+  var rows = filteredRows();
+  if (!rows.length) { toast('Tidak ada data untuk diekspor.', 'err'); return; }
+
+  var header = [
+    'Sub-SLS','Kode SLS','Kode Sub-SLS','Nama PPL','Nama PML','Status',
+    'Usaha - Pindah Sub-SLS','Usaha - Keluar Sub-SLS','Usaha - Tanpa Informasi','Usaha - Total','Usaha - Selisih',
+    'Keluarga - Pindah Sub-SLS','Keluarga - Keluar Sub-SLS','Keluarga - Tanpa Informasi','Keluarga - Total','Keluarga - Selisih',
+    'Desa/Kelurahan','Kecamatan','Catatan','Terakhir Diperbarui'
+  ];
+  var aoa = [header];
+  rows.forEach(function(m){
+    var l = state.laporan[m.id];
+    var rf = state.ref[m.id] || {u:0,k:0};
+    var hasSel = !!l && !!state.refSyncedAt;
+    aoa.push([
+      m.sls, m.kdsls, m.kdsubsls, m.ppl, m.pml, l ? 'Sudah diisi' : 'Belum diisi',
+      l ? l.u_pindah : '', l ? l.u_keluar : '', l ? l.u_noinfo : '', l ? totU(l) : '', hasSel ? (totU(l) - rf.u) : '',
+      l ? l.k_pindah : '', l ? l.k_keluar : '', l ? l.k_noinfo : '', l ? totK(l) : '', hasSel ? (totK(l) - rf.k) : '',
+      m.desa, m.kec, l ? l.catatan : '', l ? l.updated : ''
+    ]);
+  });
+  downloadXLSX('Daftar_SubSLS_' + fileTimestamp() + '.xlsx', 'Daftar Sub-SLS', aoa);
+}
+
+function exportRekapXLSX(){
+  var list = state.rekapList, cfg = state.rekapCfg;
+  if (!list || !list.length) { toast('Tidak ada data untuk diekspor.', 'err'); return; }
+
+  var header = [
+    cfg.col, 'Keterangan', 'Sub-SLS', 'Sudah Lapor', 'Belum Lapor', '% Lapor',
+    'Usaha - Pindah', 'Usaha - Keluar', 'Usaha - Tanpa Info', 'Usaha - Total', 'Usaha - Selisih',
+    'Keluarga - Pindah', 'Keluarga - Keluar', 'Keluarga - Tanpa Info', 'Keluarga - Total', 'Keluarga - Selisih',
+    'Total Usaha + Keluarga'
+  ];
+  var aoa = [header];
+  var hasSel = !!state.refSyncedAt;
+  list.forEach(function(g){
+    aoa.push([
+      g.name, g.sub || '', g.total, g.done, g.belum, g.pctDone + '%',
+      g.uP, g.uKel, g.uN, g.usaha, (hasSel && g.done > 0) ? g.selU : '',
+      g.kP, g.kKel, g.kN, g.keluarga, (hasSel && g.done > 0) ? g.selK : '',
+      g.grand
+    ]);
+  });
+  downloadXLSX('Rekapitulasi_' + state.rekapTab + '_' + fileTimestamp() + '.xlsx', 'Rekapitulasi', aoa);
 }
 
 function drawDonut(canvasId, data, colors){
